@@ -1,0 +1,49 @@
+# Fortran build artifacts
+*.o
+*.mod
+*.smod
+*.a
+*.so
+*.dylib
+
+# CMake
+build/
+cmake_build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+.deps/
+
+# Doxygen
+doc/html/
+doc/latex/
+
+# HDF5 specific
+*.h5
+*.hdf5
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Misc
+*.log
+.tags
