@@ -24,6 +24,9 @@ module solhdf5
 
    use hdf5_globals
    use error_handling
+#ifdef MPI
+   use mpi_f08, only: MPI_Comm
+#endif
    use mpi_utils
    use hdf5_file
    use hdf5_group
@@ -38,18 +41,18 @@ module solhdf5
 
 
    private
-   public :: hdf5f_t, h5group_root, hyperslab_type
+   public :: h5file_t, h5group_root, hyperslab_type
 
 
    !> Type for handeling an HDF5 file.
-   type hdf5f_t
+   type h5file_t
       !> OS file path.
       character(:), allocatable :: path
       !> HDF5 file id.
       integer(hdf5_id) :: file_id = file_id_undefined
       !> MPI communicator handle
       type(mpi_comm_type) :: mpi_comm
-      !> Flag to initialize HDF5 file in serial mode, even if compiled with MPI.
+      !> Flag to init HDF5 file in serial mode, even if compiled with MPI.
       !> By default this is set to false.
       logical :: serial_access = .false.
       !> Number of overwritten datasets
@@ -57,16 +60,16 @@ module solhdf5
 
    contains
 
-      generic :: initialize => initialize_mpi_comm_type
-      procedure :: initialize_mpi_comm_type
+#ifdef MPI
+      generic :: init => initialize_mpi_comm_world,initialize_mpi_comm_type, initialize_mpi_comm, initialize_mpi_comm_f08
+      procedure :: initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm, initialize_mpi_comm_f08
+#else
+      generic :: init => initialize_mpi_comm_type, initialize_mpi_comm
+      procedure :: initialize_mpi_comm_type, initialize_mpi_comm
+#endif
 
-      procedure :: finalize
-      procedure :: initialize_group, initialize_group_update_groupname
-      procedure :: dataset_shape
-
-      procedure :: exists => link_exists
-
-      procedure :: delete => delete_link
+      procedure :: delete, initialize_group, initialize_group_update_groupname, &
+         dataset_shape, link_exists, delete_link
 
       procedure :: handle_if_dataset_exists
       procedure :: evaluate_overwritten_datasets
@@ -83,16 +86,48 @@ module solhdf5
       procedure :: read_string, read_bool, read_integer_int32, read_real_real32, &
          read_real_real64, read_complex_real32, read_complex_real64
 
-   end type hdf5f_t
+   end type h5file_t
 
 
 contains
 
+   !> init HDF5 library and, if `path` exists, open the file, else create a file at `path`.
+   subroutine initialize_mpi_comm_world(this, path, serial_access)
+      !> HDF5 file handler.
+      class(h5file_t), intent(inout) :: this
+      !> Relative path to HDF5 file.
+      character(*), intent(in) :: path
+      !> Set to `.true.` for serial access in an MPI environment.
+      !> This is only allowed if the root process is the caller.
+      logical, intent(in), optional :: serial_access
 
-   !> Initialize HDF5 library and, if `path` exists, open the file, else create a file at `path`.
+      this%path = trim(path)
+
+      call init_with_mpi_comm_world(this%mpi_comm)
+
+      if(present(serial_access)) then
+         this%serial_access = serial_access
+      end if
+
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%initialize_mpi_comm_type): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
+
+      call hdf5_initialize(this%mpi_comm)
+
+      if(path_exists(this%path)) then
+         call hdf5_open_file(this%path, this%mpi_comm, this%file_id, this%serial_access)
+      else
+         call hdf5_create_file(this%path, this%mpi_comm, this%file_id, this%serial_access)
+      end if
+   end subroutine
+
+   !> init HDF5 library and, if `path` exists, open the file, else create a file at `path`.
    subroutine initialize_mpi_comm_type(this, path, mpi_comm, serial_access)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Relative path to HDF5 file.
       character(*), intent(in) :: path
       !> MPI communicator.
@@ -123,11 +158,62 @@ contains
       end if
    end subroutine
 
+   !> init HDF5 library with MPI_Comm from mpi_f08.
+   !> If `path` exists, open the file, else create a file at `path`.
+   subroutine initialize_mpi_comm(this, path, mpi_comm, serial_access)
+      !> HDF5 file handler.
+      class(h5file_t), intent(inout) :: this
+      !> Relative path to HDF5 file.
+      character(*), intent(in) :: path
+      !> MPI integer communicator
+      integer, intent(in) :: mpi_comm
+      !> Set to `.true.` for serial access in an MPI environment.
+      !> This is only allowed if the root process is the caller.
+      logical, intent(in), optional :: serial_access
+
+      type(mpi_comm_type) :: mpi_comm_use 
+
+      ! Create mpi_comm_type from MPI_Comm
+      call init_with_mpi_fint_comm(mpi_comm_use, mpi_comm)
+
+      if (present(serial_access)) then
+         call this%initialize_mpi_comm_type(path, mpi_comm_use, serial_access)
+      else
+         call this%initialize_mpi_comm_type(path, mpi_comm_use)
+      end if
+   end subroutine initialize_mpi_comm
+
+#ifdef MPI
+   !> init HDF5 library with MPI_Comm from mpi_f08.
+   !> If `path` exists, open the file, else create a file at `path`.
+   subroutine initialize_mpi_comm_f08(this, path, mpi_comm_f08, serial_access)
+      !> HDF5 file handler.
+      class(h5file_t), intent(inout) :: this
+      !> Relative path to HDF5 file.
+      character(*), intent(in) :: path
+      !> MPI communicator from mpi_f08.
+      type(MPI_Comm), intent(in) :: mpi_comm_f08
+      !> Set to `.true.` for serial access in an MPI environment.
+      !> This is only allowed if the root process is the caller.
+      logical, intent(in), optional :: serial_access
+
+      type(mpi_comm_type) :: mpi_comm_use
+
+      ! Create mpi_comm_type from MPI_Comm
+      mpi_comm_use%handle = mpi_comm_f08
+
+      if (present(serial_access)) then
+         call this%initialize_mpi_comm_type(path, mpi_comm_use, serial_access)
+      else
+         call this%initialize_mpi_comm_type(path, mpi_comm_use)
+      end if
+   end subroutine initialize_mpi_comm_f08
+#endif
 
    !> Close file and finalize HDF5 library.
-   subroutine finalize(this)
+   subroutine delete(this)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
 
       if (this%file_id == file_id_undefined) return ! File was never initialized
 
@@ -135,19 +221,19 @@ contains
       call hdf5_finalize(this%mpi_comm)
       call this%evaluate_overwritten_datasets()
       this%file_id = file_id_undefined
-   end subroutine finalize
+   end subroutine delete
 
 
    !> Create a new group with name `group` at `h5path`. If the group already exists, the routine does nothing.
    subroutine initialize_group(this, h5path, groupname)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
       !> Group name.
       character(*), intent(in) :: groupname
 
-      if (this%exists(join_paths(h5path, groupname))) return
+      if (this%link_exists(join_paths(h5path, groupname))) return
       call hdf5_create_group(this%mpi_comm, this%file_id, trim(h5path), groupname)
    end subroutine initialize_group
 
@@ -155,7 +241,7 @@ contains
    !> Create a new group with name `group` at `h5path`. If the group already exists, the routine does nothing.
    subroutine initialize_group_update_groupname(this, h5path, groupname)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
       !> Group name.
@@ -168,7 +254,7 @@ contains
    !> Return true or false, whether the link to `h5path` exists or not.
    logical function link_exists(this, h5path)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
 
@@ -178,7 +264,7 @@ contains
    !> Delete link to `h5path`. This action frees the space on the drive allocated by the object `h5path` points to.
    subroutine delete_link(this, h5path)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
 
@@ -189,7 +275,7 @@ contains
    !> Get the shape of a data set.
    subroutine dataset_shape(this, h5path, datasetname, shape, complex_dataset)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(in) :: this
+      class(h5file_t), intent(in) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
       !> Dataset name.
@@ -218,7 +304,7 @@ contains
    !> Warn about overwritten datasets.
    subroutine evaluate_overwritten_datasets(this)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(in) :: this
+      class(h5file_t), intent(in) :: this
 
 #ifdef USE_ASSERT
       if(this%n_overwritten_datasets > 0) then
@@ -234,15 +320,15 @@ contains
    !> In debug mode, a warning is printed to the terminal.
    subroutine handle_if_dataset_exists(this, h5path, datasetname)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
       !> Dataset name.
       character(*), intent(in) :: datasetname
 
-      if (this%exists(join_paths(h5path, datasetname))) then
+      if (this%link_exists(join_paths(h5path, datasetname))) then
          this%n_overwritten_datasets = this%n_overwritten_datasets + 1
-         call this%delete(join_paths(h5path, datasetname))
+         call this%delete_link(join_paths(h5path, datasetname))
 
 #ifdef USE_ASSERT
          write(error_unit, '(1x, A, A, A)') &
@@ -259,7 +345,7 @@ contains
    !> Write a string to an HDF5 file.
    subroutine write_string(this, h5path, dataset, string)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the HDF5 file to the group to write the data set to.
       character(*), intent(in) :: h5path
       !> Name of the data set to write.
@@ -271,7 +357,7 @@ contains
       type(c_ptr) :: buffer_ptr
       type(hyperslab_type) :: hyperslab
 
-      call hyperslab%initialize([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
+      call hyperslab%init([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
       call this%handle_if_dataset_exists(h5path, dataset)
 
       string_type = hdf5_string(this%mpi_comm, len(string, kind=hdf5_size))
@@ -286,7 +372,7 @@ contains
    !> For '.true.' it writes `'true'` and for `.false.` `'false'`.
    subroutine write_bool(this, h5path, dataset, bool)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the HDF5 file to the group to write the data set to.
       character(*), intent(in) :: h5path
       !> Name of the data set to write.
@@ -308,7 +394,7 @@ contains
    !> Read a character scalar from an HDF5 file.
    subroutine read_string(this, h5path, dataset, string)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the HDF5 file to the group to read the data set from.
       character(*), intent(in) :: h5path
       !> Name of the data set to read from.
@@ -326,7 +412,7 @@ contains
       dataset_type = hdf5_get_type(this%mpi_comm, this%file_id, h5path, dataset)
       allocate(character(len=hdf5_get_type_size(this%mpi_comm, dataset_type)) :: string)
 
-      call hyperslab%initialize([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
+      call hyperslab%init([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
 
       buffer_ptr = c_loc(string)
       call hdf5_read_dataset(this%mpi_comm, this%file_id, h5path, dataset, dataset_type, buffer_ptr, [hyperslab], this%serial_access)
@@ -337,7 +423,7 @@ contains
    !> of the boolean. See [[read_bool]].
    subroutine read_bool(this, h5path, dataset, bool)
       !> HDF5 file handler.
-      class(hdf5f_t), intent(inout) :: this
+      class(h5file_t), intent(inout) :: this
       !> Absolute path in the HDF5 file to the group to write the data set to.
       character(*), intent(in) :: h5path
       !> Name of the data set to write.

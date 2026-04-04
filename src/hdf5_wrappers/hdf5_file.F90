@@ -20,7 +20,7 @@ module hdf5_file
 contains
 
 
-   !> Initialize global variables, used by HDF5 library functions.
+   !> init global variables, used by HDF5 library functions.
    subroutine hdf5_initialize(mpi_comm)
       !> MPI communicator handle
       type(mpi_comm_type), intent(in) :: mpi_comm

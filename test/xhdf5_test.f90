@@ -26,7 +26,7 @@ contains
       integer, parameter :: n_assertions = 47
 
 #ifdef _HDF5_
-      ! Initialize test object
+      ! init test object
       call test_report%init(mpiglobal)
 
       ! Run and assert tests
@@ -115,7 +115,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr
 
       real(real64), parameter :: real_vec(5) = [1._real64, -23.0123_real64, 0._real64, 123.3245_real64, 3142._real64]
@@ -123,11 +123,11 @@ contains
       integer, allocatable :: dset_shape(:), dset_shape_ref(:)
 
       ! Create a new HDF5 file
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%finalize()
 
       ! Open an existing HDF5 file
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
 
       ! Create a new group
       call h5f%initialize_group('./', 'new_group')
@@ -178,7 +178,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr
 
       character(:), allocatable :: char_write, char_read
@@ -186,7 +186,7 @@ contains
 
       char_write = 'aloifhSADpi$%^flmdsa'
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
       call h5f%write('datasets', 'character', char_write)
@@ -221,14 +221,14 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr
 
       integer :: integer_write, integer_read
 
       integer_write = 15
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
       call h5f%write('datasets', 'integer_r1', integer_write)
@@ -248,7 +248,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, l
 
       integer :: integer_r1(8)
@@ -265,7 +265,7 @@ contains
 
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -291,7 +291,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       integer :: integer_r2(8, 3)
@@ -310,7 +310,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -355,7 +355,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real32) :: integer_r3(8, 3, 5)
@@ -376,7 +376,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -441,14 +441,14 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real32) :: real_write, real_read
 
       real_write = 0.213_real32
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
       call h5f%write('datasets', 'real_r1', real_write)
@@ -468,7 +468,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real32) :: real_r1(8)
@@ -485,7 +485,7 @@ contains
 
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -512,7 +512,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real32) :: real_r2(8, 3)
@@ -531,7 +531,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -576,7 +576,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real32) :: real_r3(8, 3, 5)
@@ -597,7 +597,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -659,7 +659,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l, m
 
       real(real32) :: real_r4(8, 3, 5, 4)
@@ -681,7 +681,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -762,14 +762,14 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real64) :: real_write, real_read
 
       real_write = 0.213_real64
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
       call h5f%write('datasets', 'real_r1', real_write)
@@ -789,7 +789,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real64) :: real_r1(8)
@@ -806,7 +806,7 @@ contains
 
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -833,7 +833,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real64) :: real_r2(8, 3)
@@ -852,7 +852,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -897,7 +897,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       real(real64) :: real_r3(8, 3, 5)
@@ -918,7 +918,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -980,7 +980,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l, m
 
       real(real64) :: real_r4(8, 3, 5, 4)
@@ -1002,7 +1002,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -1083,7 +1083,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       complex(real64) :: cmplx_r1(8)
@@ -1100,7 +1100,7 @@ contains
 
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
       datachunk = cmplx_r1(first : last)
@@ -1126,7 +1126,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       complex(real64) :: cmplx_r2(8, 3)
@@ -1145,7 +1145,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -1190,7 +1190,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l
 
       complex(real64) :: cmplx_r3(8, 3, 5)
@@ -1211,7 +1211,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 
@@ -1273,7 +1273,7 @@ contains
       !> MPI communicator
       type(mpiinfo), intent(in) :: mpiglobal
 
-      type(hdf5f_t) :: h5f
+      type(h5file_t) :: h5f
       integer :: ierr, j, k ,l, m
 
       complex(real64) :: cmplx_r4(8, 3, 5, 4)
@@ -1296,7 +1296,7 @@ contains
          end do
       end do
 
-      call h5f%initialize('test_file.h5', mpiglobal)
+      call h5f%init('test_file.h5', mpiglobal)
       call h5f%initialize_group('./', 'datasets')
 
 

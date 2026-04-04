@@ -5,7 +5,7 @@
 !   PROCNAME_STR   : quoted string with name, e.g. "read_real_sp"
 
 subroutine PROCNAME(this, h5path, dataset, buffer, datastart, hyperslabs)
-  class(hdf5f_t), intent(inout) :: this
+  class(h5file_t), intent(inout) :: this
   character(*), intent(in) :: h5path
   character(*), intent(in) :: dataset
   FT_TYPE, intent(inout), contiguous, target :: buffer(..)
@@ -29,7 +29,7 @@ subroutine PROCNAME(this, h5path, dataset, buffer, datastart, hyperslabs)
     if (present(datastart)) datastart_local = datastart
 
     allocate(hyperslabs_use(1))
-    call hyperslabs_use(1)%initialize(shape(buffer, kind=int32), datasize_file, [-1], datastart_local, [-1], [-1], [-1], COMPLEX_FLAG)
+    call hyperslabs_use(1)%init(shape(buffer, kind=int32), datasize_file, [-1], datastart_local, [-1], [-1], [-1], COMPLEX_FLAG)
   endif
 
   if(product(shape(buffer, kind=int32)) == 0) then

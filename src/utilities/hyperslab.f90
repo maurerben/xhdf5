@@ -49,14 +49,14 @@ module hyperslab
       !> Flag to identify hyperslabs for complex datasets.
       logical :: is_complex
    contains
-      procedure :: initialize, delete, check_datasize
+      procedure :: init, delete, check_datasize
    end type
 
 
 contains
 
 
-   !> Initialize a hyperslab description from Fortran-facing array metadata.
+   !> init a hyperslab description from Fortran-facing array metadata.
    !>
    !> Sentinel arrays with negative sums, typically `[-1]`, activate default values:
    !> `datasize` and `memsize` default to `count`, `datastart` and `memstart` default
@@ -65,8 +65,8 @@ contains
    !> Scalar data is normalized to rank 1 with `count = [1]`. For complex datasets, an
    !> additional leading dimension of size 2 is inserted so the data can be treated as a
    !> real dataset with one extra rank in the underlying HDF5 representation.
-   subroutine initialize(this, count, datasize, memsize, datastart, memstart, stride, datablock, complex_dataset)
-      !> Hyperslab instance to initialize.
+   subroutine init(this, count, datasize, memsize, datastart, memstart, stride, datablock, complex_dataset)
+      !> Hyperslab instance to init.
       class(hyperslab_type), intent(inout) :: this
       !> Number of selected elements in each direction.
       integer(int32), intent(in) :: count(:)
@@ -157,7 +157,7 @@ contains
          this%datablock = [[int(1, hdf5_size)], this%datablock]
       end if
 
-   end subroutine initialize
+   end subroutine init
 
    !> Validate one or more hyperslab descriptions before an HDF5 operation.
    !>

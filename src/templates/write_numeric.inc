@@ -7,7 +7,7 @@
 !   COMPLEX_FLAG   : .true. / .false. (if you need it anywhere)
 
 subroutine PROCNAME(this, h5path, dataset, buffer, datastart, datasize, hyperslabs)
-  class(hdf5f_t), intent(inout) :: this
+  class(h5file_t), intent(inout) :: this
   character(*), intent(in) :: h5path
   character(*), intent(in) :: dataset
   FT_TYPE, intent(in), contiguous, target :: buffer(..)
@@ -28,7 +28,7 @@ subroutine PROCNAME(this, h5path, dataset, buffer, datastart, datasize, hypersla
     datasize_local = [int32_undefined]
     if (present(datasize)) datasize_local = datasize
     allocate(hyperslabs_use(1))
-    call hyperslabs_use(1)%initialize(shape(buffer, kind=int32), datasize_local, [-1], datastart_local, [-1], [-1], [-1], COMPLEX_FLAG)
+    call hyperslabs_use(1)%init(shape(buffer, kind=int32), datasize_local, [-1], datastart_local, [-1], [-1], [-1], COMPLEX_FLAG)
   endif
 
   call this%handle_if_dataset_exists(h5path, dataset)

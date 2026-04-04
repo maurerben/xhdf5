@@ -32,16 +32,18 @@ module mpi_utils
 
 contains
 
-   !> Initialize with MPI_COMM_WORLD
+   !> init with MPI_COMM_WORLD
    subroutine init_with_mpi_comm_world(this)
       type(mpi_comm_type) :: this
 #ifdef MPI
       this%handle = MPI_COMM_WORLD
+#else
+      this%handle = 0
 #endif
    end subroutine
 
 
-   !> Initialize communicator from a Fortran-integer communicator handle.
+   !> init communicator from a Fortran-integer communicator handle.
    subroutine init_with_mpi_fint_comm(this, comm_fint)
       type(mpi_comm_type), intent(out) :: this
       integer, intent(in) :: comm_fint

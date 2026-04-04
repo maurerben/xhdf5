@@ -7,7 +7,7 @@
 *.dylib
 
 # CMake
-build/
+build*/
 cmake_build/
 CMakeFiles/
 CMakeCache.txt

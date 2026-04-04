@@ -27,7 +27,7 @@ module hdf5_globals
    !> Value for undefined integer.
    integer(int32), parameter, public :: int32_undefined = -1
    !> Value for undefined HDF5 id.
-   integer(hdf5_id), parameter, public  :: file_id_undefined = -1
+   integer(hdf5_id), parameter, public  :: file_id_undefined = 0
    !> Value for undefined HDF5 size.
    integer(hdf5_size), parameter, public :: h5size_undefined = -1
 
