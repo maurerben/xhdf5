@@ -74,3 +74,16 @@ target_include_directories(write_read_numerical_vector PRIVATE
 
 # Add test
 add_test(NAME write_read_numerical_vector COMMAND write_read_numerical_vector)
+
+
+# Unit tests for write/read numerical matrix routines
+add_executable(write_read_numerical_matrix src/write_read_numerical_matrix.F90)
+target_link_libraries(write_read_numerical_matrix PRIVATE solhdf5)
+
+# Set include directories for tests
+target_include_directories(write_read_numerical_matrix PRIVATE
+  ${CMAKE_BINARY_DIR}/modules
+)
+
+# Add test
+add_test(NAME write_read_numerical_matrix COMMAND write_read_numerical_matrix)
