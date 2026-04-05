@@ -13,12 +13,14 @@ program init_delete_file
    integer :: num_passed = 0
    integer :: num_failed = 0
 #ifdef MPI
-   integer :: mpi_err
+   integer :: mpi_err, rank, comm_size
 #endif
 
 #ifdef MPI
    ! Initialize MPI
    call mpi_init(mpi_err)
+   call mpi_comm_rank(MPI_COMM_WORLD, rank, mpi_err)
+   call mpi_comm_size(MPI_COMM_WORLD, comm_size, mpi_err)
 #endif
 
    write(output_unit, '(a)') "=========================================="
@@ -27,19 +29,23 @@ program init_delete_file
    write(output_unit, *)
 
 #ifdef _HDF5_
-   ! Test 1: Init and delete with serial mode
-   call test_init_delete_serial()
-
-   ! Test 2: Init creates new file
-   call test_init_creates_file()
-
-   ! Test 3: Init opens existing file
-   call test_init_opens_existing()
-
-   ! Test 4: Multiple init/delete cycles
-   call test_multiple_cycles()
-
 #ifdef MPI
+   if (comm_size == 1) then
+#endif
+      ! Test 1: Init and delete with serial mode
+      call test_init_delete_serial()
+
+      ! Test 2: Init creates new file
+      call test_init_creates_file()
+
+      ! Test 3: Init opens existing file
+      call test_init_opens_existing()
+
+      ! Test 4: Multiple init/delete cycles
+      call test_multiple_cycles()
+#ifdef MPI
+   end if
+
    ! Tests 5-6 only make sense with real MPI communicator
    ! Test 5: Init with non-serial mode (parallel mode with MPI_COMM_WORLD)
    call test_init_nonserial_mode()
@@ -269,34 +275,44 @@ contains
       write(output_unit, '(a)') test_name
 
 #ifdef MPI
-      ! First, create file in serial mode
-      call h5file%init(filename, MPI_COMM_WORLD, serial_access=.true.)
+      ! First, create file in serial mode (only rank 0)
+      if (rank == 0) then
+         call h5file%init(filename, serial_access=.true.)
+         if (h5file%file_id /= 0) then
+            call h5file%delete()
+         else
+            write(output_unit, '(a)') "    Failed to create initial file"
+            num_failed = num_failed + 1
+            return
+         end if
+      end if
+
+      ! Synchronize
+      call mpi_barrier(MPI_COMM_WORLD, mpi_err)
+
+      ! Open same file in non-serial (parallel) mode with MPI_COMM_WORLD
+      call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
       if (h5file%file_id /= 0) then
-         call h5file%delete()
+         write(output_unit, '(a)') "    Successfully opened existing file in non-serial mode"
 
-         ! Open same file in non-serial (parallel) mode with MPI_COMM_WORLD
-         call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
-
-         if (h5file%file_id /= 0) then
-            write(output_unit, '(a)') "    Successfully opened existing file in non-serial mode"
-
-            if (.not. h5file%serial_access) then
-               write(output_unit, '(a)') "    Serial_access flag correctly set to false"
-               num_passed = num_passed + 1
-            else
-               write(output_unit, '(a)') "    Serial_access flag incorrectly set"
-               num_failed = num_failed + 1
-            end if
+         if (.not. h5file%serial_access) then
+            write(output_unit, '(a)') "    Serial_access flag correctly set to false"
+            num_passed = num_passed + 1
          else
-            write(output_unit, '(a)') "    Failed to open existing file in non-serial mode"
+            write(output_unit, '(a)') "    Serial_access flag incorrectly set"
             num_failed = num_failed + 1
          end if
-
-         call h5file%delete()
       else
-         write(output_unit, '(a)') "    Failed to create initial file"
+         write(output_unit, '(a)') "    Failed to open existing file in non-serial mode"
          num_failed = num_failed + 1
+      end if
+
+      call h5file%delete()
+
+      ! Clean up file (only rank 0)
+      if (rank == 0) then
+         call execute_command_line("rm -f " // filename)
       end if
 #else
       write(output_unit, '(a)') "    Skipped (MPI not available)"
