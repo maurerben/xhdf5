@@ -20,6 +20,12 @@ subroutine PROCNAME(this, h5path, dataset, buffer, datastart, datasize, hypersla
   type(c_ptr) :: buffer_ptr
   FT_TYPE, target :: dummy_buffer
 
+  if(this%serial_access) then
+     call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+        'Error(solhdf5%write): serial_access is set to .true., only the root process &
+        is allowed to call solhdf5 routines.')
+  end if
+
   if(present(hyperslabs)) then ! Use predefined hyperslabs
     hyperslabs_use = hyperslabs
   else ! Define a hyperslab 

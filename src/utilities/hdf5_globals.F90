@@ -38,4 +38,7 @@ module hdf5_globals
    !> String to represent a `.false.` value.
    character(*), parameter, public :: false_string = 'false'
 
+   !> String marker for empty strings in HDF5 files.
+   character(len=7), target, public :: empty_marker = "<EMPTY>"
+
 end module hdf5_globals

@@ -17,6 +17,12 @@ subroutine PROCNAME(this, h5path, dataset, buffer, datastart, hyperslabs)
   type(hyperslab_type), allocatable :: hyperslabs_use(:)
   FT_TYPE, target :: dummy_buffer
 
+  if(this%serial_access) then
+     call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+        'Error(solhdf5%read): serial_access is set to .true., only the root process &
+        is allowed to call solhdf5 routines.')
+  end if
+
 
 
   call this%dataset_shape(h5path, dataset, datasize_file, COMPLEX_FLAG) ! We need to compare the datasize HDF5 sees (no complex numbers)

@@ -233,6 +233,12 @@ contains
       !> Group name.
       character(*), intent(in) :: groupname
 
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%initialize_group): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
+
       if (this%link_exists(join_paths(h5path, groupname))) return
       call hdf5_create_group(this%mpi_comm, this%file_id, trim(h5path), groupname)
    end subroutine initialize_group
@@ -258,6 +264,12 @@ contains
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
 
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%link_exists): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
+
       link_exists = hdf5_link_exists(this%mpi_comm, this%file_id, trim(h5path))
    end function link_exists
 
@@ -267,6 +279,12 @@ contains
       class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
+
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%delete_link): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
 
       call hdf5_delete_link(this%mpi_comm, this%file_id, trim(h5path))
    end subroutine delete_link
@@ -288,6 +306,12 @@ contains
 
       logical :: complex_dataset_local
       integer(hdf5_size), allocatable :: shape_local(:)
+
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%dataset_shape): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
 
       complex_dataset_local = .false.
       if(present(complex_dataset)) complex_dataset_local = complex_dataset
@@ -356,14 +380,18 @@ contains
       integer(hdf5_id) :: string_type
       type(c_ptr) :: buffer_ptr
       type(hyperslab_type) :: hyperslab
-      character(len=7), target :: empty_marker
+
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%write_string): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
 
       call hyperslab%init([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
       call this%handle_if_dataset_exists(h5path, dataset)
 
       ! Handle empty strings specially
       if (len(string) == 0) then
-         empty_marker = "<EMPTY>"
          string_type = hdf5_string(this%mpi_comm, len(empty_marker, kind=hdf5_size))
          buffer_ptr = c_loc(empty_marker)
       else
@@ -418,6 +446,12 @@ contains
       type(c_ptr) :: buffer_ptr
       type(hyperslab_type) :: hyperslab
 
+      if(this%serial_access) then
+         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%read_string): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
+
       dataset_type = hdf5_get_type(this%mpi_comm, this%file_id, h5path, dataset)
       allocate(character(len=hdf5_get_type_size(this%mpi_comm, dataset_type)) :: string)
 
@@ -427,7 +461,7 @@ contains
       call hdf5_read_dataset(this%mpi_comm, this%file_id, h5path, dataset, dataset_type, buffer_ptr, [hyperslab], this%serial_access)
 
       ! Handle empty strings specially
-      if (string == "<EMPTY>") then
+      if (string == empty_marker) then
          deallocate(string)
          allocate(character(len=0) :: string)
       end if
