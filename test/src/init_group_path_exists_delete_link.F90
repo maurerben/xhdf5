@@ -34,16 +34,16 @@ program init_group_path_exists_delete_link
 
 #ifdef _HDF5_
 
-   ! Test 1: initialize_group 
+   ! Test 1: initialize_group
    call test_initialize_group()
 
-   ! Test 2: initialize_group_update_groupname 
+   ! Test 2: initialize_group_update_groupname
    call test_initialize_group_update_groupname()
 
-   ! Test 3: link_exists 
+   ! Test 3: link_exists
    call test_link_exists()
 
-   ! Test 4: delete_link 
+   ! Test 4: delete_link
    call test_delete_link()
 #else
    write(output_unit, '(a)') "HDF5 not available - tests skipped"
@@ -85,7 +85,7 @@ contains
       ! Clean up any existing file
       call execute_command_line("rm -f " // filename)
 
-      ! Init file 
+      ! Init file
       call h5file%init(filename, serial_access=.false.)
 
       if (h5file%file_id /= 0) then
@@ -142,7 +142,7 @@ contains
       ! Clean up any existing file
       call execute_command_line("rm -f " // filename)
 
-      ! Init file 
+      ! Init file
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
       if (h5file%file_id /= 0) then
@@ -191,7 +191,7 @@ contains
       ! Clean up any existing file
       call execute_command_line("rm -f " // filename)
 
-      ! Init file 
+      ! Init file
       call h5file%init(filename, serial_access=.false.)
 
       if (h5file%file_id /= 0) then
@@ -246,7 +246,7 @@ contains
       ! Clean up any existing file
       call execute_command_line("rm -f " // filename)
 
-      ! Init file 
+      ! Init file
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
       if (h5file%file_id /= 0) then

@@ -49,7 +49,7 @@ program write_read_numerical_vector_test
    call test_write_read_complex_real64_vector()
    call test_write_read_complex_real64_vector_serial()
 
-#ifdef MPI   
+#ifdef MPI
    ! Test uneven data distribution
    call test_write_read_integer_int32_vector_uneven()
 
@@ -60,7 +60,7 @@ program write_read_numerical_vector_test
 #else
    write(output_unit, '(a)') "HDF5 not available - tests skipped"
 #endif
-   
+
    ! Summary
 #ifdef MPI
    write(output_unit, *)
@@ -68,13 +68,13 @@ program write_read_numerical_vector_test
    write(output_unit, '(a,i0,a,i0,a,i0)') "Results: ", num_passed, " passed, ", &
       num_failed, " failed out of ", num_tests, " tests (MPI_COMM_WORLD size: ", comm_size, ")"
    write(output_unit, '(a)') "=========================================="
-#else 
+#else
    write(output_unit, *)
    write(output_unit, '(a)') "=========================================="
    write(output_unit, '(a,i0,a,i0,a,i0)') "Results: ", num_passed, " passed, ", &
       num_failed, " failed out of ", num_tests, " tests"
    write(output_unit, '(a)') "=========================================="
-#endif 
+#endif
 
    ! Exit with appropriate code
    if (num_failed > 0) then
@@ -775,7 +775,7 @@ contains
       integer(int32) :: local_size, start_idx, i
       type(hyperslab_type), allocatable :: hyperslabs(:)
       integer(int32) :: datastart(1), datasize(1)
-      
+
 #ifdef MPI
 
       num_tests = num_tests + 1
@@ -841,8 +841,8 @@ contains
          write(output_unit, '(a)') "    File initialization failed"
          num_failed = num_failed + 1
       end if
-#else 
-      ! Single process mode - do nothing 
+#else
+      ! Single process mode - do nothing
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
       write(output_unit, '(a)') "    Single process mode - skipping uneven distribution test"
@@ -938,8 +938,8 @@ contains
          num_failed = num_failed + 1
       end if
 
-#else 
-      ! Single process mode - do nothing 
+#else
+      ! Single process mode - do nothing
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
       write(output_unit, '(a)') "    Single process mode - skipping uneven distribution test"
