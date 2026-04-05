@@ -13,11 +13,18 @@ program init_group_path_exists_delete_link
    integer :: num_failed = 0
 #ifdef MPI
    integer :: mpi_err
+   logical :: mpi_initialized_flag, mpi_init_by_me
 #endif
 
 #ifdef MPI
-   ! Initialize MPI
-   call mpi_init(mpi_err)
+   ! Check if MPI is already initialized (e.g., when running with mpiexec)
+   call mpi_initialized(mpi_initialized_flag, mpi_err)
+   if (.not. mpi_initialized_flag) then
+      call mpi_init(mpi_err)
+      mpi_init_by_me = .true.
+   else
+      mpi_init_by_me = .false.
+   end if
 #endif
 
    write(output_unit, '(a)') "=========================================="
@@ -52,14 +59,14 @@ program init_group_path_exists_delete_link
    ! Exit with appropriate code
    if (num_failed > 0) then
 #ifdef MPI
-      call mpi_finalize(mpi_err)
+      if (mpi_init_by_me) call mpi_finalize(mpi_err)
 #endif
       stop 1
    end if
 
 #ifdef MPI
    ! Finalize MPI
-   call mpi_finalize(mpi_err)
+   if (mpi_init_by_me) call mpi_finalize(mpi_err)
 #endif
 
 contains
@@ -74,6 +81,9 @@ contains
 
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
+
+      ! Clean up any existing file
+      call execute_command_line("rm -f " // filename)
 
       ! Init file 
       call h5file%init(filename, serial_access=.false.)
@@ -129,6 +139,9 @@ contains
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
 
+      ! Clean up any existing file
+      call execute_command_line("rm -f " // filename)
+
       ! Init file 
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
@@ -174,6 +187,9 @@ contains
 
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
+
+      ! Clean up any existing file
+      call execute_command_line("rm -f " // filename)
 
       ! Init file 
       call h5file%init(filename, serial_access=.false.)
@@ -226,6 +242,9 @@ contains
 
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
+
+      ! Clean up any existing file
+      call execute_command_line("rm -f " // filename)
 
       ! Init file 
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
