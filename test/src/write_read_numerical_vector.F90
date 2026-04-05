@@ -870,6 +870,13 @@ contains
       num_tests = num_tests + 1
       write(output_unit, '(a)') test_name
 
+      if (comm_size < 2) then
+         write(output_unit, '(a)') "    Test requires at least 2 MPI ranks - skipping"
+         num_passed = num_passed + 1
+         write(output_unit, *)
+         return
+      end if
+
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 

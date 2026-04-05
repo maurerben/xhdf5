@@ -41,6 +41,9 @@ if(ENABLE_MPI)
   endif()
 endif()
 
+# Enable testing
+enable_testing()
+
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(test)

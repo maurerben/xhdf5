@@ -8,7 +8,11 @@ target_include_directories(minimal_hdf5_test PRIVATE
 )
 
 # Add test
-add_test(NAME minimal_hdf5_test COMMAND minimal_hdf5_test)
+if(ENABLE_MPI)
+  add_test(NAME minimal_hdf5_test COMMAND ${MPIEXEC} -np 1 $<TARGET_FILE:minimal_hdf5_test>)
+else()
+  add_test(NAME minimal_hdf5_test COMMAND minimal_hdf5_test)
+endif()
 
 
 # Unit tests for init/delete file routines
@@ -21,7 +25,11 @@ target_include_directories(init_delete_file PRIVATE
 )
 
 # Add tests for initialize/delete group and checking links routins 
-add_test(NAME init_delete_file COMMAND init_delete_file)
+if(ENABLE_MPI)
+  add_test(NAME init_delete_file COMMAND ${MPIEXEC_EXECUTABLE} -np 1 $<TARGET_FILE:init_delete_file>)
+else()
+  add_test(NAME init_delete_file COMMAND init_delete_file)
+endif()
 
 
 # Unit tests for initialize/finalize routines
@@ -34,7 +42,11 @@ target_include_directories(init_group_path_exists_delete_link PRIVATE
 )
 
 # Add test
-add_test(NAME init_group_path_exists_delete_link COMMAND init_group_path_exists_delete_link)
+if(ENABLE_MPI)
+  add_test(NAME init_group_path_exists_delete_link COMMAND ${MPIEXEC_EXECUTABLE} -np 1 $<TARGET_FILE:init_group_path_exists_delete_link>)
+else()
+  add_test(NAME init_group_path_exists_delete_link COMMAND init_group_path_exists_delete_link)
+endif()
 
 
 # Unit tests for write/read data routines (strings and booleans)
@@ -47,7 +59,11 @@ target_include_directories(write_read_data PRIVATE
 )
 
 # Add test
-add_test(NAME write_read_data COMMAND write_read_data)
+if(ENABLE_MPI)
+  add_test(NAME write_read_data COMMAND ${MPIEXEC_EXECUTABLE} -np 1 $<TARGET_FILE:write_read_data>)
+else()
+  add_test(NAME write_read_data COMMAND write_read_data)
+endif()
 
 
 # Unit tests for write/read numerical scalar routines
@@ -60,7 +76,11 @@ target_include_directories(write_read_numerical_scalar PRIVATE
 )
 
 # Add test
-add_test(NAME write_read_numerical_scalar COMMAND write_read_numerical_scalar)
+if(ENABLE_MPI)
+  add_test(NAME write_read_numerical_scalar COMMAND ${MPIEXEC_EXECUTABLE} -np 1 $<TARGET_FILE:write_read_numerical_scalar>)
+else()
+  add_test(NAME write_read_numerical_scalar COMMAND write_read_numerical_scalar)
+endif()
 
 
 # Unit tests for write/read numerical vector routines
@@ -73,7 +93,11 @@ target_include_directories(write_read_numerical_vector PRIVATE
 )
 
 # Add test
-add_test(NAME write_read_numerical_vector COMMAND write_read_numerical_vector)
+if(ENABLE_MPI)
+  add_test(NAME write_read_numerical_vector COMMAND ${MPIEXEC_EXECUTABLE} -np 1 $<TARGET_FILE:write_read_numerical_vector>)
+else()
+  add_test(NAME write_read_numerical_vector COMMAND write_read_numerical_vector)
+endif()
 
 
 # Unit tests for write/read numerical matrix routines
@@ -86,4 +110,8 @@ target_include_directories(write_read_numerical_matrix PRIVATE
 )
 
 # Add test
-add_test(NAME write_read_numerical_matrix COMMAND write_read_numerical_matrix)
+if(ENABLE_MPI)
+  add_test(NAME write_read_numerical_matrix COMMAND ${MPIEXEC_EXECUTABLE} -np 1 $<TARGET_FILE:write_read_numerical_matrix>)
+else()
+  add_test(NAME write_read_numerical_matrix COMMAND write_read_numerical_matrix)
+endif()
