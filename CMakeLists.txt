@@ -44,6 +44,19 @@ endif()
 # Enable testing
 enable_testing()
 
+# Find FORD for documentation generation (optional)
+find_program(FORD_EXECUTABLE ford)
+if(FORD_EXECUTABLE)
+  add_custom_target(doc
+    COMMAND ${FORD_EXECUTABLE} ${CMAKE_SOURCE_DIR}/ford.md
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Generating documentation with FORD..."
+  )
+  message(STATUS "FORD found - use 'make doc' to generate documentation")
+else()
+  message(STATUS "FORD not found - documentation generation disabled (install with: pip install ford)")
+endif()
+
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(test)

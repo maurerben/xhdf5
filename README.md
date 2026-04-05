@@ -48,3 +48,13 @@
 - MPI test executables are launched via `${MPIEXEC_EXECUTABLE}` when `ENABLE_MPI` is enabled.
 - The test suite is configured to use `min(3, nproc)` MPI ranks by default.
 - `ctest -j` controls the number of test executables run in parallel, not the number of MPI ranks inside each test.
+
+## Documentation
+
+API documentation is generated using [FORD](https://github.com/Fortran-FOSS-Programmers/ford). To generate docs:
+
+```bash
+ford ford.md
+```
+
+Documentation output is in `doc/index.html`.

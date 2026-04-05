@@ -14,6 +14,9 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
+# Documentation
+doc/
+
 # IDE
 .vscode/
 .idea/

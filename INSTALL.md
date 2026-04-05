@@ -2,11 +2,18 @@
 
 ## Prerequisites
 
+### Build Requirements
+
 - CMake 3.15 or newer
 - Fortran compiler (e.g. `gfortran`, `ifort`, `pgfortran`)
 - HDF5 with Fortran support
 - MPI libraries and compiler wrappers if using MPI support
 - Linux utility `nproc` is used by the test CMake configuration to set default MPI ranks
+
+### Documentation (optional)
+
+- FORD (Fortran Automatic Documentation) for API documentation generation
+  - Install with: `pip install ford`
 
 ## Build steps
 
@@ -63,6 +70,16 @@ ctest -j 2
 - `-DENABLE_MPI=OFF` to build without MPI support
 - `-DNUM_PROCESSES=<n>` to override the default MPI rank count used for tests
 
+## Generating API Documentation
+
+To generate HTML documentation with FORD (requires FORD to be installed):
+
+```bash
+ford ford.md
+```
+
+The documentation output will be placed in `doc/` directory. Open `doc/index.html` in a browser to view the API documentation.
+
 ## Example full workflow
 
 ```bash
@@ -71,4 +88,7 @@ cd build_parallel
 cmake .. -DENABLE_MPI=ON
 make -j$(nproc)
 ctest -j 2
+
+# Generate documentation
+ford ../ford.md
 ```
