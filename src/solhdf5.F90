@@ -98,7 +98,7 @@ contains
       !> Relative path to HDF5 file.
       character(*), intent(in) :: path
       !> Set to `.true.` for serial access in an MPI environment.
-      !> This is only allowed if the root process is the caller.
+      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
 
       this%path = trim(path)
@@ -133,7 +133,7 @@ contains
       !> MPI communicator.
       type(mpi_comm_type), intent(in) :: mpi_comm
       !> Set to `.true.` for serial access in an MPI environment.
-      !> This is only allowed if the root process is the caller.
+      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
 
       this%path = trim(path)
@@ -168,7 +168,7 @@ contains
       !> MPI integer communicator
       integer, intent(in) :: mpi_comm
       !> Set to `.true.` for serial access in an MPI environment.
-      !> This is only allowed if the root process is the caller.
+      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
 
       type(mpi_comm_type) :: mpi_comm_use 
@@ -194,7 +194,7 @@ contains
       !> MPI communicator from mpi_f08.
       type(MPI_Comm), intent(in) :: mpi_comm_f08
       !> Set to `.true.` for serial access in an MPI environment.
-      !> This is only allowed if the root process is the caller.
+      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
 
       type(mpi_comm_type) :: mpi_comm_use
@@ -356,12 +356,21 @@ contains
       integer(hdf5_id) :: string_type
       type(c_ptr) :: buffer_ptr
       type(hyperslab_type) :: hyperslab
+      character(len=7), target :: empty_marker
 
       call hyperslab%init([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
       call this%handle_if_dataset_exists(h5path, dataset)
 
-      string_type = hdf5_string(this%mpi_comm, len(string, kind=hdf5_size))
-      buffer_ptr = c_loc(string)
+      ! Handle empty strings specially
+      if (len(string) == 0) then
+         empty_marker = "<EMPTY>"
+         string_type = hdf5_string(this%mpi_comm, len(empty_marker, kind=hdf5_size))
+         buffer_ptr = c_loc(empty_marker)
+      else
+         string_type = hdf5_string(this%mpi_comm, len(string, kind=hdf5_size))
+         buffer_ptr = c_loc(string)
+      end if
+
       call hdf5_write_dataset(this%mpi_comm, this%file_id, trim(h5path), dataset, string_type, &
          buffer_ptr, [hyperslab], this%serial_access)
    end subroutine write_string
@@ -416,6 +425,12 @@ contains
 
       buffer_ptr = c_loc(string)
       call hdf5_read_dataset(this%mpi_comm, this%file_id, h5path, dataset, dataset_type, buffer_ptr, [hyperslab], this%serial_access)
+
+      ! Handle empty strings specially
+      if (string == "<EMPTY>") then
+         deallocate(string)
+         allocate(character(len=0) :: string)
+      end if
    end subroutine read_string
 
    !> Read a boolean to an HDF5 file.
