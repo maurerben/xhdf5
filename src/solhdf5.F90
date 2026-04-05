@@ -64,8 +64,8 @@ module solhdf5
       generic :: init => initialize_mpi_comm_world,initialize_mpi_comm_type, initialize_mpi_comm, initialize_mpi_comm_f08
       procedure :: initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm, initialize_mpi_comm_f08
 #else
-      generic :: init => initialize_mpi_comm_type, initialize_mpi_comm
-      procedure :: initialize_mpi_comm_type, initialize_mpi_comm
+      generic :: init => initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm
+      procedure :: initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm
 #endif
 
       procedure :: delete, initialize_group, initialize_group_update_groupname, &
@@ -171,7 +171,7 @@ contains
       !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
 
-      type(mpi_comm_type) :: mpi_comm_use 
+      type(mpi_comm_type) :: mpi_comm_use
 
       ! Create mpi_comm_type from MPI_Comm
       call init_with_mpi_fint_comm(mpi_comm_use, mpi_comm)

@@ -29,7 +29,6 @@ module mpi_utils
    end type
 
 
-
 contains
 
    !> init with MPI_COMM_WORLD

@@ -37,14 +37,40 @@ target_include_directories(init_group_path_exists_delete_link PRIVATE
 add_test(NAME init_group_path_exists_delete_link COMMAND init_group_path_exists_delete_link)
 
 
-# Unit tests for write/read string routines
-add_executable(write_read_string src/write_read_string.F90)
-target_link_libraries(write_read_string PRIVATE solhdf5)
+# Unit tests for write/read data routines (strings and booleans)
+add_executable(write_read_data src/write_read_data.F90)
+target_link_libraries(write_read_data PRIVATE solhdf5)
 
 # Set include directories for tests
-target_include_directories(write_read_string PRIVATE
+target_include_directories(write_read_data PRIVATE
   ${CMAKE_BINARY_DIR}/modules
 )
 
 # Add test
-add_test(NAME write_read_string COMMAND write_read_string)
+add_test(NAME write_read_data COMMAND write_read_data)
+
+
+# Unit tests for write/read numerical scalar routines
+add_executable(write_read_numerical_scalar src/write_read_numerical_scalar.F90)
+target_link_libraries(write_read_numerical_scalar PRIVATE solhdf5)
+
+# Set include directories for tests
+target_include_directories(write_read_numerical_scalar PRIVATE
+  ${CMAKE_BINARY_DIR}/modules
+)
+
+# Add test
+add_test(NAME write_read_numerical_scalar COMMAND write_read_numerical_scalar)
+
+
+# Unit tests for write/read numerical vector routines
+add_executable(write_read_numerical_vector src/write_read_numerical_vector.F90)
+target_link_libraries(write_read_numerical_vector PRIVATE solhdf5)
+
+# Set include directories for tests
+target_include_directories(write_read_numerical_vector PRIVATE
+  ${CMAKE_BINARY_DIR}/modules
+)
+
+# Add test
+add_test(NAME write_read_numerical_vector COMMAND write_read_numerical_vector)

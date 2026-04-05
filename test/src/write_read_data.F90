@@ -22,7 +22,7 @@ program write_read_string_test
 #endif
 
    write(output_unit, '(a)') "=========================================="
-   write(output_unit, '(a)') "  solhdf5 Write/Read String Unit Tests"
+   write(output_unit, '(a)') "  solhdf5 Write/Read Unit Tests"
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
@@ -41,6 +41,15 @@ program write_read_string_test
 
    ! Test 5: Overwrite string dataset
    call test_overwrite_string_dataset()
+
+   ! Test 6: Write and read boolean
+   call test_write_read_bool()
+
+   ! Test 7: Write and read boolean in serial mode
+   call test_write_read_bool_serial()
+
+   ! Test 8: Overwrite boolean dataset
+   call test_overwrite_bool_dataset()
 #else
    write(output_unit, '(a)') "HDF5 not available - tests skipped"
 #endif
@@ -326,5 +335,149 @@ contains
 
       write(output_unit, *)
    end subroutine test_overwrite_string_dataset
+
+
+   subroutine test_write_read_bool()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test 6: Write and read boolean"
+      character(*), parameter :: filename = "test_write_read_bool_parallel.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_bool"
+      logical :: test_bool = .true.
+      logical :: read_bool
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Init file in parallel mode
+      call h5file%init(filename, serial_access=.false.)
+
+      if (h5file%file_id /= 0) then
+         ! Write boolean
+         call h5file%write(h5path, dataset, test_bool)
+         write(output_unit, '(a)') "    Boolean written successfully"
+
+         ! Read boolean back
+         call h5file%read(h5path, dataset, read_bool)
+
+         ! Check if booleans match
+         if (read_bool .eqv. test_bool) then
+            write(output_unit, '(a)') "    Boolean read matches written boolean"
+            num_passed = num_passed + 1
+         else
+            write(output_unit, '(a,l1,a,l1)') "    Boolean mismatch: expected ", test_bool, &
+               ", got ", read_bool
+            num_failed = num_failed + 1
+         end if
+
+         call h5file%delete()
+      else
+         write(output_unit, '(a)') "    File initialization failed"
+         num_failed = num_failed + 1
+      end if
+
+      write(output_unit, *)
+   end subroutine test_write_read_bool
+
+
+   subroutine test_write_read_bool_serial()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test 7: Write and read boolean (serial mode)"
+      character(*), parameter :: filename = "test_write_read_bool_serial.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_bool"
+      logical :: test_bool = .false.
+      logical :: read_bool
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Initialize MPI communicator first to check rank
+      call init_with_mpi_comm_world(h5file%mpi_comm)
+
+      ! Only root process performs serial HDF5 operations
+      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+         ! Init file in serial mode (only root process allowed)
+         call h5file%init(filename, serial_access=.true.)
+
+         if (h5file%file_id /= 0) then
+            ! Write boolean
+            call h5file%write(h5path, dataset, test_bool)
+            write(output_unit, '(a)') "    Boolean written successfully"
+
+            ! Read boolean back
+            call h5file%read(h5path, dataset, read_bool)
+
+            ! Check if booleans match
+            if (read_bool .eqv. test_bool) then
+               write(output_unit, '(a)') "    Boolean read matches written boolean"
+               num_passed = num_passed + 1
+            else
+               write(output_unit, '(a,l1,a,l1)') "    Boolean mismatch: expected ", test_bool, &
+                  ", got ", read_bool
+               num_failed = num_failed + 1
+            end if
+
+            call h5file%delete()
+         else
+            write(output_unit, '(a)') "    File initialization failed"
+            num_failed = num_failed + 1
+         end if
+      else
+         ! Non-root processes should not participate in the test
+         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+         num_passed = num_passed + 1  ! Count as passed since this is expected behavior
+      end if
+
+      write(output_unit, *)
+   end subroutine test_write_read_bool_serial
+
+
+   subroutine test_overwrite_bool_dataset()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test 8: Overwrite boolean dataset"
+      character(*), parameter :: filename = "test_overwrite_bool_dataset.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "overwrite_bool"
+      logical :: original_bool = .true.
+      logical :: new_bool = .false.
+      logical :: read_bool
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Init file in parallel mode
+      call h5file%init(filename, serial_access=.false.)
+
+      if (h5file%file_id /= 0) then
+         ! Write original boolean
+         call h5file%write(h5path, dataset, original_bool)
+         write(output_unit, '(a)') "    Original boolean written"
+
+         ! Overwrite with new boolean
+         call h5file%write(h5path, dataset, new_bool)
+         write(output_unit, '(a)') "    Boolean overwritten"
+
+         ! Read boolean back
+         call h5file%read(h5path, dataset, read_bool)
+
+         ! Check if the new boolean is read
+         if (read_bool .eqv. new_bool) then
+            write(output_unit, '(a)') "    Overwritten boolean read correctly"
+            num_passed = num_passed + 1
+         else
+            write(output_unit, '(a,l1,a,l1)') "    Expected ", new_bool, &
+               ", got ", read_bool
+            num_failed = num_failed + 1
+         end if
+
+         call h5file%delete()
+      else
+         write(output_unit, '(a)') "    File initialization failed"
+         num_failed = num_failed + 1
+      end if
+
+      write(output_unit, *)
+   end subroutine test_overwrite_bool_dataset
 
 end program write_read_string_test
