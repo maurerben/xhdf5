@@ -88,7 +88,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write scalar
          call h5file%write(h5path, dataset, test_value)
          write(output_unit, '(a)') "    Scalar written successfully"
@@ -134,7 +134,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write scalar
             call h5file%write(h5path, dataset, test_value)
             write(output_unit, '(a)') "    Scalar written successfully"
@@ -181,7 +181,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write scalar
          call h5file%write(h5path, dataset, test_value)
          write(output_unit, '(a)') "    Scalar written successfully"
@@ -227,7 +227,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write scalar
             call h5file%write(h5path, dataset, test_value)
             write(output_unit, '(a)') "    Scalar written successfully"
@@ -274,7 +274,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write scalar
          call h5file%write(h5path, dataset, test_value)
          write(output_unit, '(a)') "    Scalar written successfully"
@@ -320,7 +320,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write scalar
             call h5file%write(h5path, dataset, test_value)
             write(output_unit, '(a)') "    Scalar written successfully"
@@ -367,7 +367,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write scalar
          call h5file%write(h5path, dataset, test_value)
          write(output_unit, '(a)') "    Scalar written successfully"
@@ -413,7 +413,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write scalar
             call h5file%write(h5path, dataset, test_value)
             write(output_unit, '(a)') "    Scalar written successfully"
@@ -460,7 +460,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write scalar
          call h5file%write(h5path, dataset, test_value)
          write(output_unit, '(a)') "    Scalar written successfully"
@@ -506,7 +506,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write scalar
             call h5file%write(h5path, dataset, test_value)
             write(output_unit, '(a)') "    Scalar written successfully"

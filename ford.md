@@ -27,27 +27,32 @@ search: true
 
 ## Key Features
 
-### 🔧 **Easy HDF5 Wrappers**
+### **Easy HDF5 Wrappers**
+
 - Type-safe interface for all HDF5 operations
 - Automatic memory management and error handling
 - Intuitive Fortran-style API
 
-### 🚀 **Parallel MPI Support**
+### **Parallel MPI Support**
+
 - Full MPI-aware parallel I/O operations
-- Automatic hyperslab management for complex data distributions
+- Flexible hyperslab management for complex data distributions
 - Configurable communicator support
 
-### 📊 **Comprehensive Data Type Support**
+### **Comprehensive Data Type Support**
+
 - **Scalars**: Integer (int32), Real (real32/real64), Complex (complex32/complex64), Strings, Booleans
-- **Arrays**: 1D vectors and 2D matrices with automatic distribution
+- **Arrays**: 1D, 2D, and higher-dimensional arrays with automatic shape handling
 - **Complex Data**: Native support for complex numbers with proper HDF5 storage
 
-### 🏗️ **Advanced Group Management**
+### **Advanced Group Management**
+
 - Hierarchical group creation and navigation
 - Link existence checking and deletion
 - Dataset shape querying and metadata access
 
-### 🧪 **Robust Testing**
+### **Robust Testing**
+
 - Complete test suite with CTest integration
 - MPI scaling tests (configurable process counts)
 - File I/O validation across different data types and distributions
@@ -118,6 +123,7 @@ The library supports several hyperslab patterns for parallel I/O:
 ## Build System
 
 ### Prerequisites
+
 - CMake 3.15+
 - Fortran compiler (gfortran, ifort, etc.)
 - HDF5 library with Fortran bindings
@@ -145,24 +151,29 @@ make doc
 The main interface is provided through the `h5file_t` derived type, which supports:
 
 ### File Operations
+
 - `init()`: Initialize/open HDF5 file
 - `delete()`: Close file and finalize HDF5
 
 ### Data I/O
+
 - `write()`: Generic write interface for all supported data types
 - `read()`: Generic read interface for all supported data types
 
 ### Group Management
-- `initialize_group()`: Create new groups
+
+- `init_group()`: Create new groups
 - `link_exists()`: Check link existence
 - `delete_link()`: Remove links/datasets
 
 ### Metadata
+
 - `dataset_shape()`: Query dataset dimensions
 
 ## Examples
 
 See the `test/` directory for comprehensive usage examples covering:
+
 - Scalar data I/O
 - Vector operations with different distributions
 - Matrix I/O with MPI scaling
@@ -172,6 +183,7 @@ See the `test/` directory for comprehensive usage examples covering:
 ## Contributing
 
 Contributions are welcome! Please ensure:
+
 - All tests pass with `ctest`
 - Code follows Fortran 2008 standards
 - Documentation is updated for new features

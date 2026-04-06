@@ -13,7 +13,7 @@ module hdf5_group
 
 
    private
-   public :: hdf5_create_group, hdf5_link_exists, hdf5_delete_link
+   public :: hdf5_create_group, hdf5_link_exists, hdf5_delete_link, hdf5_link_points_to_group
 
 
 contains
@@ -33,7 +33,7 @@ contains
       integer :: h5err
       integer(hdf5_id) :: group_id, file_id_newgroup
 
-      call assert_true(mpi_comm, file_id /= file_id_undefined, &
+      call assert_true(file_id /= file_id_undefined, &
          'Error(xhdf5%write): HDF5 file is not initialized.')
 
       call h5gopen_f(file_id, h5path, group_id, h5err)
@@ -62,7 +62,7 @@ contains
 #ifdef _HDF5_
       integer :: h5err
 
-      call assert_true(mpi_comm, file_id /= file_id_undefined, &
+      call assert_true(file_id /= file_id_undefined, &
          'Error(xhdf5%write): HDF5 file is not initialized.')
 
       call h5lexists_f(file_id, h5path, hdf5_link_exists, h5err)
@@ -84,12 +84,52 @@ contains
 #ifdef _HDF5_
       integer :: h5err
 
-      call assert_true(mpi_comm, file_id /= file_id_undefined, &
+      call assert_true(file_id /= file_id_undefined, &
          'Error(xhdf5%write): HDF5 file is not initialized.')
 
       call h5ldelete_f(file_id, h5path, h5err)
       call handle_hdf5_error(mpi_comm, 'h5ldelete_f' ,h5err)
 #endif
    end subroutine hdf5_delete_link
+
+
+   !> Check if the link associated with `h5path` in an HDF5 file or group corresponding to `file_id` points to a group.
+   subroutine hdf5_link_points_to_group(mpi_comm, file_id, h5path, points_to_group)
+      !> MPI communicator.
+      type(mpi_comm_type), intent(in) :: mpi_comm
+      !> Identifier of the file or group, used by HDF5.
+      integer(hdf5_id), intent(in) :: file_id
+      !> Path to an object in an HDF5 file. Can be given as `path/to/object`.
+      character(*), intent(in) :: h5path
+      !> Set to `.true.` if the link associated with `h5path` points to a group.
+      logical, intent(out) :: points_to_group
+#ifdef _HDF5_
+      integer :: h5err
+      integer(hdf5_id) :: obj_id
+      type(h5o_info_t) :: info
+
+      call assert_true(file_id /= file_id_undefined, &
+         'Error(xhdf5%write): HDF5 file is not initialized.')
+
+      call h5oopen_f(file_id, h5path, obj_id, h5err)
+      call handle_hdf5_error(mpi_comm, 'h5oopen_f', h5err)
+
+      ! Get object info
+      call h5oget_info_f(obj_id, info, h5err)
+      call handle_hdf5_error(mpi_comm, 'h5oget_info_f', h5err)
+  
+      call h5oclose_f(obj_id, h5err)
+      call handle_hdf5_error(mpi_comm, 'h5oclose_f', h5err)
+
+      ! Check type
+      if (info%type == H5O_TYPE_GROUP_F) then
+         points_to_group = .true.
+      else
+         points_to_group = .false.
+      end if
+#else
+      points_to_group = .false.
+#endif
+   end subroutine hdf5_link_points_to_group
 
 end module hdf5_group

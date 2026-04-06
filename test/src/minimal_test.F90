@@ -23,10 +23,10 @@ program minimal_hdf5_test
 #ifdef MPI
    ! Open/Create file with MPI_COMM_WORLD
    write(output_unit, '(a)') "Opening HDF5 file with MPI_COMM_WORLD..."
-#endif 
+#endif
    call h5file%init("test_minimal.h5", serial_access=.false.)
 
-   if (h5file%file_id /= 0) then
+   if (h5file%is_open()) then
       write(output_unit, '(a)') "  File opened successfully"
    else
       write(output_unit, '(a)') "  Failed to open file"

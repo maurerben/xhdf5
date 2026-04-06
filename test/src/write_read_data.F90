@@ -91,7 +91,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write string
          call h5file%write(h5path, dataset, test_string)
          write(output_unit, '(a)') "    String written successfully"
@@ -144,7 +144,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write string
             call h5file%write(h5path, dataset, test_string)
             write(output_unit, '(a)') "    String written successfully"
@@ -197,7 +197,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write empty string
          call h5file%write(h5path, dataset, test_string)
          write(output_unit, '(a)') "    Empty string written successfully"
@@ -251,7 +251,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write long string
          call h5file%write(h5path, dataset, trim(test_string))
          write(output_unit, '(a)') "    Long string written successfully"
@@ -300,7 +300,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write original string
          call h5file%write(h5path, dataset, original_string)
          write(output_unit, '(a)') "    Original string written"
@@ -352,7 +352,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write boolean
          call h5file%write(h5path, dataset, test_bool)
          write(output_unit, '(a)') "    Boolean written successfully"
@@ -400,7 +400,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Write boolean
             call h5file%write(h5path, dataset, test_bool)
             write(output_unit, '(a)') "    Boolean written successfully"
@@ -449,7 +449,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Write original boolean
          call h5file%write(h5path, dataset, original_bool)
          write(output_unit, '(a)') "    Original boolean written"

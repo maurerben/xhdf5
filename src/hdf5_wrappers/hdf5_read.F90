@@ -47,7 +47,7 @@ contains
       integer(hdf5_size), allocatable :: memsize(:), datasize(:), memsize_use(:)
       logical :: has_selection
 
-      call assert_true(mpi_comm, file_id /= file_id_undefined, &
+      call assert_true(file_id /= file_id_undefined, &
          'Error(solhdf5%write): HDF5 file is not initialized.')
 
       call check_hyperslabs(hyperslabs, 'hdf5_read_dataset', mpi_comm)

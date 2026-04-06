@@ -34,11 +34,11 @@ program init_group_path_exists_delete_link
 
 #ifdef _HDF5_
 
-   ! Test 1: initialize_group
-   call test_initialize_group()
+   ! Test 1: init_group
+   call test_init_group()
 
-   ! Test 2: initialize_group_update_groupname
-   call test_initialize_group_update_groupname()
+   ! Test 2: init_group_update_groupname
+   call test_init_group_update_groupname()
 
    ! Test 3: link_exists
    call test_link_exists()
@@ -72,10 +72,10 @@ program init_group_path_exists_delete_link
 contains
 
 
-   subroutine test_initialize_group()
+   subroutine test_init_group()
       type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test 1: initialize_group "
-      character(*), parameter :: filename = "test_initialize_group.h5"
+      character(*), parameter :: test_name = "Test 1: init_group "
+      character(*), parameter :: filename = "test_init_group.h5"
       character(*), parameter :: group_path = "/"
       character(*), parameter :: group_name = "test_group"
 
@@ -88,20 +88,20 @@ contains
       ! Init file
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Check group doesn't exist initially
          if (.not. h5file%link_exists(join_paths(group_path, group_name))) then
             write(output_unit, '(a)') "    Group does not exist initially"
 
             ! Create group
-            call h5file%initialize_group(group_path, group_name)
+            call h5file%init_group(group_path, group_name)
 
             ! Check group exists now
             if (h5file%link_exists(join_paths(group_path, group_name))) then
                write(output_unit, '(a)') "    Group created successfully"
 
                ! Try to create again (should not fail)
-               call h5file%initialize_group(group_path, group_name)
+               call h5file%init_group(group_path, group_name)
 
                if (h5file%link_exists(join_paths(group_path, group_name))) then
                   write(output_unit, '(a)') "    Group still exists after second create"
@@ -126,13 +126,13 @@ contains
       end if
 
       write(output_unit, *)
-   end subroutine test_initialize_group
+   end subroutine test_init_group
 
 
-   subroutine test_initialize_group_update_groupname()
+   subroutine test_init_group_update_groupname()
       type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test 2: initialize_group_update_groupname "
-      character(*), parameter :: filename = "test_initialize_group_update.h5"
+      character(*), parameter :: test_name = "Test 2: init_group_update_groupname "
+      character(*), parameter :: filename = "test_init_group_update.h5"
       character(*), parameter :: group_path = "/"
       character(:), allocatable :: group_name
 
@@ -145,11 +145,11 @@ contains
       ! Init file
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          group_name = "test_group_update"
 
          ! Create group and update groupname
-         call h5file%initialize_group_update_groupname(group_path, group_name)
+         call h5file%init_group_update_groupname(group_path, group_name)
 
          ! Check group exists
          if (h5file%link_exists(group_name)) then
@@ -175,7 +175,7 @@ contains
       end if
 
       write(output_unit, *)
-   end subroutine test_initialize_group_update_groupname
+   end subroutine test_init_group_update_groupname
 
 
    subroutine test_link_exists()
@@ -194,7 +194,7 @@ contains
       ! Init file
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Check root exists
          if (h5file%link_exists("/")) then
             write(output_unit, '(a)') "    Root link exists"
@@ -204,7 +204,7 @@ contains
                write(output_unit, '(a)') "    Non-existing group correctly reported as not existing"
 
                ! Create group
-               call h5file%initialize_group(group_path, group_name)
+               call h5file%init_group(group_path, group_name)
 
                ! Check group exists now
                if (h5file%link_exists(join_paths(group_path, group_name))) then
@@ -249,9 +249,9 @@ contains
       ! Init file
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Create group
-         call h5file%initialize_group(group_path, group_name)
+         call h5file%init_group(group_path, group_name)
 
          if (h5file%link_exists(join_paths(group_path, group_name))) then
             write(output_unit, '(a)') "    Group created successfully"

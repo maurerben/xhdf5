@@ -5,9 +5,10 @@ module hdf5_file
    use hdf5
 #endif
 
-   use error_handling, only: handle_hdf5_error
+   use error_handling, only: handle_hdf5_error, assert_true
    use hdf5_globals, only: hdf5_id
    use mpi_utils, only: mpi_comm_type, comm_to_fint, mpi_info_null_fint
+   use os_utils, only: path_exists, separate_path_and_filename
 
 
    implicit none
@@ -44,7 +45,7 @@ contains
    end subroutine
 
    !> Create an HDF5 file at `path`.
-   subroutine hdf5_create_file(path, mpi_comm, file_id, serial_access)
+   subroutine hdf5_create_file(path, mpi_comm, file_id, serial_access, make_parents)
       !> Relative path to the HDF5 file. Is expected to end with the name of the file,
       !> _e.g._, `path = 'path/to/file.h5'. HDF5 files are expected to have the `.h5` suffix.
       character(*), intent(in) :: path
@@ -54,10 +55,13 @@ contains
       integer(hdf5_id), intent(out) :: file_id
       !> Set to `.true.` if only serial access is possible.
       logical, intent(in) :: serial_access
+      !> Set to `.true.` if parent directories should be created if they do not exist.
+      logical, intent(in) :: make_parents
 
 #ifdef _HDF5_
-      integer :: h5err
+      integer :: h5err, cmderr
       integer(hdf5_id) :: file_id_plist
+      character(:), allocatable :: path_to, filname
 
       call h5pcreate_f(H5P_FILE_ACCESS_F, file_id_plist, h5err)
       call handle_hdf5_error(mpi_comm, 'h5pcreate_f', h5err)
@@ -68,6 +72,18 @@ contains
          call handle_hdf5_error(mpi_comm, 'h5pset_fapl_mpio_f', h5err)
       end if
 #endif
+
+      call separate_path_and_filename(path, path_to, filname)
+      if(path_to /= '') then
+         if(.not. path_exists(path_to)) then
+            if(make_parents) then
+               call execute_command_line("mkdir -p " // trim(path_to), wait=.true., exitstat=cmderr)
+               call assert_true(cmderr == 0, 'Error(hdf5_create_file): Failed to create parent directories for HDF5 file.')
+            else
+               call assert_true(.false., 'Error(hdf5_create_file): Parent directory does not exist for HDF5 file and make_parents is set to .false.')
+            end if
+         end if
+      end if
 
       call h5fcreate_f(path, H5F_ACC_TRUNC_F, file_id, h5err, access_prp = file_id_plist)
       call handle_hdf5_error(mpi_comm, 'h5fopen_f', h5err)

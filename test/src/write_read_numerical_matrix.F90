@@ -114,7 +114,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          ! Row-wise distribution: each rank gets n_rows/comm_size rows
          local_rows = n_rows / comm_size
@@ -202,7 +202,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_matrix(n_rows, n_cols))
             allocate(read_matrix(n_rows, n_cols))
             do j = 1, n_cols
@@ -257,7 +257,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          local_rows = n_rows / comm_size
          start_row = my_rank * local_rows + 1
@@ -341,7 +341,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_matrix(n_rows, n_cols))
             allocate(read_matrix(n_rows, n_cols))
             do j = 1, n_cols
@@ -396,7 +396,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          local_rows = n_rows / comm_size
          start_row = my_rank * local_rows + 1
@@ -480,7 +480,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_matrix(n_rows, n_cols))
             allocate(read_matrix(n_rows, n_cols))
             do j = 1, n_cols
@@ -535,7 +535,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          local_rows = n_rows / comm_size
          start_row = my_rank * local_rows + 1
@@ -621,7 +621,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_matrix(n_rows, n_cols))
             allocate(read_matrix(n_rows, n_cols))
             do j = 1, n_cols
@@ -677,7 +677,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          local_rows = n_rows / comm_size
          start_row = my_rank * local_rows + 1
@@ -763,7 +763,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_matrix(n_rows, n_cols))
             allocate(read_matrix(n_rows, n_cols))
             do j = 1, n_cols
@@ -821,7 +821,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Total matrix size depends on number of processes
          n_rows = comm_size * rows_per_rank
 
@@ -898,7 +898,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Total matrix size depends on number of processes
          n_cols = comm_size * cols_per_rank
 
@@ -976,7 +976,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Calculate grid dimensions for 2D decomposition
          ! Find factors of comm_size that are as square as possible
          grid_rows = int(sqrt(real(comm_size)))

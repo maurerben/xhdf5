@@ -113,7 +113,7 @@ contains
       call h5file%init(filename, serial_access=.false.)
       print *, "File initialized with ID: ", h5file%file_id
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          ! Set up data distribution: rank 0 gets 1-10, rank 1 gets 11-20, etc.
          start_idx = my_rank * elements_per_rank + 1
@@ -203,7 +203,7 @@ contains
          ! Init file in serial mode (only root process allowed)
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             ! Create and write full vector
             allocate(full_vector(total_elements))
             allocate(read_vector(total_elements))
@@ -260,7 +260,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          start_idx = my_rank * elements_per_rank + 1
          local_size = elements_per_rank
@@ -337,7 +337,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_vector(total_elements))
             allocate(read_vector(total_elements))
             do i = 1, total_elements
@@ -391,7 +391,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          start_idx = my_rank * elements_per_rank + 1
          local_size = elements_per_rank
@@ -468,7 +468,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_vector(total_elements))
             allocate(read_vector(total_elements))
             do i = 1, total_elements
@@ -522,7 +522,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          start_idx = my_rank * elements_per_rank + 1
          local_size = elements_per_rank
@@ -599,7 +599,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_vector(total_elements))
             allocate(read_vector(total_elements))
             do i = 1, total_elements
@@ -653,7 +653,7 @@ contains
 
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
 #ifdef MPI
          start_idx = my_rank * elements_per_rank + 1
          local_size = elements_per_rank
@@ -730,7 +730,7 @@ contains
       if (comm_to_rank(h5file%mpi_comm) == root_rank) then
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             allocate(full_vector(total_elements))
             allocate(read_vector(total_elements))
             do i = 1, total_elements
@@ -784,7 +784,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Uneven distribution: rank 0 writes 7 elements, rank 1 writes 18 elements
          if (my_rank == 0) then
             local_size = 7
@@ -880,7 +880,7 @@ contains
       ! Init file in parallel mode
       call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          ! Non-contiguous distribution: each rank writes to 2 separate blocks
          ! Rank 0: blocks at positions 1-3 and 7-9
          ! Rank 1: blocks at positions 4-6 and 10-12

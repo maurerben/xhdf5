@@ -1,7 +1,6 @@
 !> Wrapper for writing any data set to an HDF5 file
 module hdf5_write
    use iso_c_binding, only: c_ptr
-
 #ifdef _HDF5_
    use hdf5
 #endif
@@ -18,13 +17,10 @@ module hdf5_write
    private
    public :: hdf5_write_dataset
 
-   ! interface hdf5_write_dataset
-   !   module procedure :: hdf5_write_dataset_memspace, hdf5_write_dataset_hyperslab
-   ! end interface
-
 
 contains
 
+   !> Write a data set or chunk of an data set of any type and shape to file.
    subroutine hdf5_write_dataset(mpi_comm, file_id, h5path, dataset, dataset_type, buffer_ptr, hyperslabs, serial_access)
       !> MPI communicator handle
       type(mpi_comm_type), intent(in) :: mpi_comm
@@ -52,8 +48,8 @@ contains
       integer(hdf5_size), allocatable :: memsize(:), datasize(:), memsize_use(:)
       logical :: has_selection
 
-      call assert_true(mpi_comm, file_id /= file_id_undefined, &
-         'Error(hdf5_write_dataset_memspace): HDF5 file is not initialized.')
+      call assert_true(file_id /= file_id_undefined, &
+         'Error(hdf5_write_dataset): HDF5 file is not initialized.')
 
       call check_hyperslabs(hyperslabs, 'hdf5_write_dataset', mpi_comm)
 

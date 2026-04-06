@@ -13,16 +13,14 @@ contains
 
 
    !> Assert if a condition is true. If not the all processes of the MPI comminicator will be terminated.
-   subroutine assert_true(mpi_comm, condition, message)
-      !> MPI communicator.
-      type(mpi_comm_type), intent(in) :: mpi_comm
+   subroutine assert_true(condition, message)
       !> Condition that must be true to pass the assert_true.
       logical, intent(in) :: condition
       !> Message to print if assertion fails
       character(*), intent(in) :: message
 
       if (.not. condition) then
-         call terminate(mpi_comm=mpi_comm, message=message)
+         call terminate(message=message)
       end if
 
    end subroutine assert_true

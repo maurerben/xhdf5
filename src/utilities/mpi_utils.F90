@@ -117,7 +117,7 @@ contains
       call mpi_abort(MPI_COMM_WORLD, error_code, mpierr)
 #else
       if(present(message)) write(error_unit, *) trim(adjustl(message))
-      stop
+      error stop ':('
 #endif
 
    end subroutine terminate

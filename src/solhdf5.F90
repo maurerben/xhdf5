@@ -17,16 +17,15 @@
 !>
 !> Be aware of that the writing routines will overwrite an existing data set with the same name.
 module solhdf5
-   use iso_c_binding, only: c_ptr, c_loc
-   use iso_fortran_env, only: real32, real64, int32
-
-   use os_utils, only: path_exists, join_paths
-
-   use hdf5_globals
-   use error_handling
 #ifdef MPI
    use mpi_f08, only: MPI_Comm
 #endif
+   use iso_c_binding, only: c_ptr, c_loc
+   use iso_fortran_env, only: real32, real64, int32, error_unit
+
+   use os_utils
+   use hdf5_globals
+   use error_handling
    use mpi_utils
    use hdf5_file
    use hdf5_group
@@ -42,6 +41,18 @@ module solhdf5
 
    private
    public :: h5file_t, h5group_root, hyperslab_type
+
+
+   !> Default value for creating parent directories when creating a file. By default this is set to false.
+   logical, parameter :: make_parents_default = .false.
+   !> Default value for serial access in an MPI environment. By default this is set to false.
+   logical, parameter :: serial_access_default = .false.
+   !> Default value for warning about overwritten datasets. By default this is set to true in debug mode and false in release mode.
+#ifdef USE_ASSERT
+   logical, parameter :: warn_overwrite = .true.
+#else
+   logical, parameter :: warn_overwrite = .false.
+#endif
 
 
    !> Type for handeling an HDF5 file.
@@ -60,72 +71,74 @@ module solhdf5
 
    contains
 
+      generic :: &
+         init => &
+         initialize_mpi_comm_type, &
+         initialize_mpi_comm_int, &
 #ifdef MPI
-      generic :: init => initialize_mpi_comm_world,initialize_mpi_comm_type, initialize_mpi_comm, initialize_mpi_comm_f08
-      procedure :: initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm, initialize_mpi_comm_f08
-#else
-      generic :: init => initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm
-      procedure :: initialize_mpi_comm_world, initialize_mpi_comm_type, initialize_mpi_comm
+         initialize_mpi_comm_f08, &
 #endif
+         initialize_mpi_comm_world
 
-      procedure :: delete, initialize_group, initialize_group_update_groupname, &
-         dataset_shape, link_exists, delete_link
+      generic :: &
+         write => &
+         write_string, &
+         write_bool, &
+         write_integer_int32, &
+         write_real_real32, &
+         write_real_real64, &
+         write_complex_real32, &
+         write_complex_real64
 
-      procedure :: handle_if_dataset_exists
-      procedure :: evaluate_overwritten_datasets
+      generic :: &
+         read => &
+         read_string, &
+         read_bool, &
+         read_integer_int32, &
+         read_real_real32, &
+         read_real_real64, &
+         read_complex_real32, &
+         read_complex_real64
 
-      generic :: write => write_string, write_bool, write_integer_int32, write_real_real32, &
-         write_real_real64, write_complex_real32, write_complex_real64
-
-      procedure :: write_string, write_bool, write_integer_int32, write_real_real32, &
-         write_real_real64, write_complex_real32, write_complex_real64
-
-      generic :: read => read_string, read_bool, read_integer_int32, read_real_real32, &
-         read_real_real64, read_complex_real32, read_complex_real64
-
-      procedure :: read_string, read_bool, read_integer_int32, read_real_real32, &
-         read_real_real64, read_complex_real32, read_complex_real64
-
+      procedure :: &
+         initialize_mpi_comm_type, &
+         initialize_mpi_comm_int, &
+#ifdef MPI
+         initialize_mpi_comm_f08, &
+#endif
+         initialize_mpi_comm_world, &
+         delete, &
+         init_group, &
+         init_group_update_groupname, &
+         dataset_shape, &
+         link_exists, &
+         delete_link, &
+         is_open, &
+         handle_if_dataset_exists, &
+         evaluate_overwritten_datasets, &
+         link_points_to_group, &
+         write_string, &
+         write_bool, &
+         write_integer_int32, &
+         write_real_real32, &
+         write_real_real64, &
+         write_complex_real32, &
+         write_complex_real64, &
+         read_string, &
+         read_bool, &
+         read_integer_int32, &
+         read_real_real32, &
+         read_real_real64, &
+         read_complex_real32, &
+         read_complex_real64
    end type h5file_t
+
 
 
 contains
 
    !> init HDF5 library and, if `path` exists, open the file, else create a file at `path`.
-   subroutine initialize_mpi_comm_world(this, path, serial_access)
-      !> HDF5 file handler.
-      class(h5file_t), intent(inout) :: this
-      !> Relative path to HDF5 file.
-      character(*), intent(in) :: path
-      !> Set to `.true.` for serial access in an MPI environment.
-      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
-      logical, intent(in), optional :: serial_access
-
-      this%path = trim(path)
-
-      call init_with_mpi_comm_world(this%mpi_comm)
-
-      if(present(serial_access)) then
-         this%serial_access = serial_access
-      end if
-
-      if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%initialize_mpi_comm_type): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
-      end if
-
-      call hdf5_initialize(this%mpi_comm)
-
-      if(path_exists(this%path)) then
-         call hdf5_open_file(this%path, this%mpi_comm, this%file_id, this%serial_access)
-      else
-         call hdf5_create_file(this%path, this%mpi_comm, this%file_id, this%serial_access)
-      end if
-   end subroutine
-
-   !> init HDF5 library and, if `path` exists, open the file, else create a file at `path`.
-   subroutine initialize_mpi_comm_type(this, path, mpi_comm, serial_access)
+   subroutine initialize_mpi_comm_type(this, path, mpi_comm, serial_access, make_parents)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
       !> Relative path to HDF5 file.
@@ -135,6 +148,10 @@ contains
       !> Set to `.true.` for serial access in an MPI environment.
       !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
+      !> Set to `.true.` if parent directories should be created if they do not exist.
+      logical, intent(in), optional :: make_parents
+
+      logical :: make_parents_local
 
       this%path = trim(path)
       this%mpi_comm = mpi_comm
@@ -143,8 +160,14 @@ contains
          this%serial_access = serial_access
       end if
 
+      if(present(make_parents)) then
+         make_parents_local = make_parents
+      else
+         make_parents_local = make_parents_default
+      end if
+
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
             'Error(solhdf5%initialize_mpi_comm_type): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
@@ -154,39 +177,51 @@ contains
       if(path_exists(this%path)) then
          call hdf5_open_file(this%path, this%mpi_comm, this%file_id, this%serial_access)
       else
-         call hdf5_create_file(this%path, this%mpi_comm, this%file_id, this%serial_access)
+         call hdf5_create_file(this%path, this%mpi_comm, this%file_id, this%serial_access, make_parents_local)
       end if
    end subroutine
 
    !> init HDF5 library with MPI_Comm from mpi_f08.
    !> If `path` exists, open the file, else create a file at `path`.
-   subroutine initialize_mpi_comm(this, path, mpi_comm, serial_access)
+   subroutine initialize_mpi_comm_int(this, path, mpi_comm_int, serial_access, make_parents)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
       !> Relative path to HDF5 file.
       character(*), intent(in) :: path
       !> MPI integer communicator
-      integer, intent(in) :: mpi_comm
+      integer, intent(in) :: mpi_comm_int
       !> Set to `.true.` for serial access in an MPI environment.
       !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
+      !> Set to `.true.` if parent directories should be created if they do not exist.
+      logical, intent(in), optional :: make_parents
 
-      type(mpi_comm_type) :: mpi_comm_use
+      type(mpi_comm_type) :: mpi_comm_local
+      logical :: serial_access_local, make_parents_local
+
+      if(present(serial_access)) then
+         serial_access_local = serial_access
+      else
+         serial_access_local = serial_access_default
+      end if
+
+      if(present(make_parents)) then
+         make_parents_local = make_parents
+      else
+         make_parents_local = make_parents_default
+      end if
 
       ! Create mpi_comm_type from MPI_Comm
-      call init_with_mpi_fint_comm(mpi_comm_use, mpi_comm)
+      call init_with_mpi_fint_comm(mpi_comm_local, mpi_comm_int)
 
-      if (present(serial_access)) then
-         call this%initialize_mpi_comm_type(path, mpi_comm_use, serial_access)
-      else
-         call this%initialize_mpi_comm_type(path, mpi_comm_use)
-      end if
-   end subroutine initialize_mpi_comm
+      ! Call main init routine
+      call this%initialize_mpi_comm_type(path, mpi_comm_local, serial_access_local, make_parents_local)
+   end subroutine initialize_mpi_comm_int
 
 #ifdef MPI
    !> init HDF5 library with MPI_Comm from mpi_f08.
    !> If `path` exists, open the file, else create a file at `path`.
-   subroutine initialize_mpi_comm_f08(this, path, mpi_comm_f08, serial_access)
+   subroutine initialize_mpi_comm_f08(this, path, mpi_comm_f08, serial_access, make_parents)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
       !> Relative path to HDF5 file.
@@ -196,19 +231,66 @@ contains
       !> Set to `.true.` for serial access in an MPI environment.
       !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
       logical, intent(in), optional :: serial_access
+      !> Set to `.true.` if parent directories should be created if they do not exist.
+      logical, intent(in), optional :: make_parents
 
-      type(mpi_comm_type) :: mpi_comm_use
+      type(mpi_comm_type) :: mpi_comm_local
+      logical :: serial_access_local, make_parents_local
+
+      if(present(serial_access)) then
+         serial_access_local = serial_access
+      else
+         serial_access_local = serial_access_default
+      end if
+
+      if(present(make_parents)) then
+         make_parents_local = make_parents
+      else
+         make_parents_local = make_parents_default
+      end if
 
       ! Create mpi_comm_type from MPI_Comm
-      mpi_comm_use%handle = mpi_comm_f08
+      mpi_comm_local%handle = mpi_comm_f08
 
-      if (present(serial_access)) then
-         call this%initialize_mpi_comm_type(path, mpi_comm_use, serial_access)
-      else
-         call this%initialize_mpi_comm_type(path, mpi_comm_use)
-      end if
+      ! Call main init routine
+      call this%initialize_mpi_comm_type(path, mpi_comm_local, serial_access_local, make_parents_local)
    end subroutine initialize_mpi_comm_f08
 #endif
+
+   !> init HDF5 library and, if `path` exists, open the file, else create a file at `path`.
+   subroutine initialize_mpi_comm_world(this, path, serial_access, make_parents)
+      !> HDF5 file handler.
+      class(h5file_t), intent(inout) :: this
+      !> Relative path to HDF5 file.
+      character(*), intent(in) :: path
+      !> Set to `.true.` for serial access in an MPI environment.
+      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
+      logical, intent(in), optional :: serial_access
+      !> Set to `.true.` if parent directories should be created if they do not exist.
+      logical, intent(in), optional :: make_parents
+
+      type(mpi_comm_type) :: mpi_comm_local
+      logical :: serial_access_local, make_parents_local
+
+      if(present(serial_access)) then
+         serial_access_local = serial_access
+      else
+         serial_access_local = serial_access_default
+      end if
+
+      if(present(make_parents)) then
+         make_parents_local = make_parents
+      else
+         make_parents_local = make_parents_default
+      end if
+
+      ! Create mpi_comm_type from MPI_COMM_WORLD
+      call init_with_mpi_comm_world(mpi_comm_local)
+
+      ! Call main init routine
+      call this%initialize_mpi_comm_type(path, mpi_comm_local, serial_access_local, make_parents_local)
+   end subroutine
+
 
    !> Close file and finalize HDF5 library.
    subroutine delete(this)
@@ -217,15 +299,29 @@ contains
 
       if (this%file_id == file_id_undefined) return ! File was never initialized
 
+      ! Close file and finalize HDF5 library
       call hdf5_close_file(this%mpi_comm, this%file_id)
       call hdf5_finalize(this%mpi_comm)
+
+      ! Warn about overwritten datasets, if there are any
       call this%evaluate_overwritten_datasets()
+
+      ! Reset file_id to undefined to mark that the file is closed
       this%file_id = file_id_undefined
    end subroutine delete
 
 
+   !> Verify that the file is opened
+   logical function is_open(this)
+      !> HDF5 file handler.
+      class(h5file_t), intent(in) :: this
+
+      is_open = (this%file_id /= file_id_undefined)
+   end function is_open
+
+
    !> Create a new group with name `group` at `h5path`. If the group already exists, the routine does nothing.
-   subroutine initialize_group(this, h5path, groupname)
+   recursive subroutine init_group(this, h5path, groupname)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
@@ -233,19 +329,50 @@ contains
       !> Group name.
       character(*), intent(in) :: groupname
 
+      character(:), allocatable :: path, groupname_local
+
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%initialize_group): serial_access is set to .true., only the root process &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%init_group): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
 
-      if (this%link_exists(join_paths(h5path, groupname))) return
-      call hdf5_create_group(this%mpi_comm, this%file_id, trim(h5path), groupname)
-   end subroutine initialize_group
+      if (this%link_exists(join_paths(h5path, groupname))) then
+         ! If a link with the same name as the group to create already exists, check that it points to a group. If not, raise an error.
+         call assert_true(this%link_points_to_group(join_paths(h5path, groupname)), &
+            'Error(solhdf5%init_group): a link with the same name as the group to create already exists but does not point to a group.')
+      else if (this%link_exists(h5path)) then
+         ! If the group path already exists but does not point to a group, raise an error. If it points to a group, create the new group in this group.
+         call assert_true(this%link_points_to_group(h5path), &
+            'Error(solhdf5%init_group): a link with the same name as the group path already exists but does not point to a group.')
+         call hdf5_create_group(this%mpi_comm, this%file_id, h5path, groupname)
+      else
+         ! If the group path does not exist, create the parent group and then create the new group in it.
+         call separate_path_and_filename(h5path, path, groupname_local )
+         call this%init_group(path, groupname_local)
+      end if
+   end subroutine init_group
+
+
+   !> Check if the link to `h5path` points to a group.
+   logical function link_points_to_group(this, h5path)
+      !> HDF5 file handler.
+      class(h5file_t), intent(in) :: this
+      !> Absolute path in the hdf5 file.
+      character(*), intent(in) :: h5path
+
+      if(this%serial_access) then
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(solhdf5%link_points_to_group): serial_access is set to .true., only the root process &
+            is allowed to call solhdf5 routines.')
+      end if
+
+      call hdf5_link_points_to_group(this%mpi_comm, this%file_id, trim(h5path), link_points_to_group)
+   end function link_points_to_group
 
 
    !> Create a new group with name `group` at `h5path`. If the group already exists, the routine does nothing.
-   subroutine initialize_group_update_groupname(this, h5path, groupname)
+   subroutine init_group_update_groupname(this, h5path, groupname)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
@@ -253,9 +380,9 @@ contains
       !> Group name.
       character(:), allocatable, intent(inout) :: groupname
 
-      call this%initialize_group(h5path, groupname)
+      call this%init_group(h5path, groupname)
       groupname = join_paths(h5path, groupname)
-   end subroutine initialize_group_update_groupname
+   end subroutine init_group_update_groupname
 
    !> Return true or false, whether the link to `h5path` exists or not.
    logical function link_exists(this, h5path)
@@ -265,7 +392,7 @@ contains
       character(*), intent(in) :: h5path
 
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
             'Error(solhdf5%link_exists): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
@@ -281,7 +408,7 @@ contains
       character(*), intent(in) :: h5path
 
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
             'Error(solhdf5%delete_link): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
@@ -308,7 +435,7 @@ contains
       integer(hdf5_size), allocatable :: shape_local(:)
 
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
             'Error(solhdf5%dataset_shape): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
@@ -330,12 +457,10 @@ contains
       !> HDF5 file handler.
       class(h5file_t), intent(in) :: this
 
-#ifdef USE_ASSERT
-      if(this%n_overwritten_datasets > 0) then
+      if(warn_overwrite .and. this%n_overwritten_datasets > 0) then
          write(error_unit, '(1x, A, I3, A, A, A)') &
             "Warning(solhdf5): ", this%n_overwritten_datasets, " dataset(s) were overwritten in file ", this%path, "."
       end if
-#endif
    end subroutine evaluate_overwritten_datasets
 
 
@@ -353,14 +478,13 @@ contains
       if (this%link_exists(join_paths(h5path, datasetname))) then
          this%n_overwritten_datasets = this%n_overwritten_datasets + 1
          call this%delete_link(join_paths(h5path, datasetname))
-
-#ifdef USE_ASSERT
-         write(error_unit, '(1x, A, A, A)') &
-            "Warning(solhdf5): Dataset ", datasetname, " already existed and was deleted. &
-            It will be overwritten with new data."
-#endif
+         if(warn_overwrite) then
+            write(error_unit, '(1x, A, A, A)') &
+               "Warning(solhdf5): Dataset ", datasetname, " already existed and was deleted. &
+               It will be overwritten with new data."
+         end if
+      else
       end if
-
    end subroutine
 
 !-----------------------------------------------------------------------------------------------------------------------
@@ -382,7 +506,7 @@ contains
       type(hyperslab_type) :: hyperslab
 
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
             'Error(solhdf5%write_string): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
@@ -446,8 +570,14 @@ contains
       type(c_ptr) :: buffer_ptr
       type(hyperslab_type) :: hyperslab
 
+      call assert_true(this%is_open(), &
+         'Error(solhdf5%read_string): HDF5 file is not initialized.')
+
+      call assert_true(this%link_exists(join_paths(h5path, dataset)), &
+         'Error(solhdf5%read_string): dataset does not exist.')
+
       if(this%serial_access) then
-         call assert_true(this%mpi_comm, comm_to_rank(this%mpi_comm) == root_rank, &
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
             'Error(solhdf5%read_string): serial_access is set to .true., only the root process &
             is allowed to call solhdf5 routines.')
       end if
@@ -489,7 +619,7 @@ contains
       else if(bool_string == false_string) then
          bool = .false.
       else
-         call assert_true(this%mpi_comm, .false., 'dataset does not contain a string representing the state of a bool.')
+         call assert_true(.false., 'dataset does not contain a string representing the state of a bool.')
       end if
    end subroutine read_bool
 

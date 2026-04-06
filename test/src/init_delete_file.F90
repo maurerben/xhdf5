@@ -92,7 +92,7 @@ contains
       call h5file%init(filename, serial_access=.true.)
 
       ! Check file was initialized
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          write(output_unit, '(a)') "    Init succeeded"
 
          ! Delete file
@@ -127,7 +127,7 @@ contains
       ! Init - should create new file
       call h5file%init(filename, serial_access=.true.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          write(output_unit, '(a)') "    File opened/created"
 
          ! Check root exists (file is valid)
@@ -162,13 +162,13 @@ contains
       ! First, create a file
       call h5file%init(filename, serial_access=.true.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          call h5file%delete()
 
          ! Now open the same file
          call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             write(output_unit, '(a)') "    Successfully opened existing file"
             num_passed = num_passed + 1
          else
@@ -209,7 +209,7 @@ contains
          ! Delete
          call h5file%delete()
 
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             write(output_unit, '(a,i0,a)') "    Delete failed in cycle ", i, ""
             num_failed = num_failed + 1
             return
@@ -237,7 +237,7 @@ contains
       ! Init file in non-serial mode with MPI_COMM_WORLD
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          write(output_unit, '(a)') "    Init succeeded in non-serial mode"
 
          ! Verify serial_access flag is false
@@ -278,7 +278,7 @@ contains
       ! First, create file in serial mode (only rank 0)
       if (rank == 0) then
          call h5file%init(filename, serial_access=.true.)
-         if (h5file%file_id /= 0) then
+         if (h5file%is_open()) then
             call h5file%delete()
          else
             write(output_unit, '(a)') "    Failed to create initial file"
@@ -293,7 +293,7 @@ contains
       ! Open same file in non-serial (parallel) mode with MPI_COMM_WORLD
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
 
-      if (h5file%file_id /= 0) then
+      if (h5file%is_open()) then
          write(output_unit, '(a)') "    Successfully opened existing file in non-serial mode"
 
          if (.not. h5file%serial_access) then

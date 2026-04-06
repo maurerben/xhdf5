@@ -130,12 +130,12 @@ contains
       call h5f%init('test_file.h5', mpiglobal)
 
       ! Create a new group
-      call h5f%initialize_group('./', 'new_group')
-      call h5f%initialize_group('./', 'new_group') ! Can initialize_group handle an existing group?
+      call h5f%init_group('./', 'new_group')
+      call h5f%init_group('./', 'new_group') ! Can init_group handle an existing group?
 
       ! Create a sub group
-      call h5f%initialize_group('new_group', 'sub_group')
-      call h5f%initialize_group('new_group', 'sub_group') ! Can initialize_group handle an existing group?
+      call h5f%init_group('new_group', 'sub_group')
+      call h5f%init_group('new_group', 'sub_group') ! Can init_group handle an existing group?
 
       ! Test link_exists
       call test_report%assert(h5f%exists('new_group'), &
@@ -187,7 +187,7 @@ contains
       char_write = 'aloifhSADpi$%^flmdsa'
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
       call h5f%write('datasets', 'character', char_write)
       call h5f%read('datasets', 'character', char_read)
@@ -229,7 +229,7 @@ contains
       integer_write = 15
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
       call h5f%write('datasets', 'integer_r1', integer_write)
       call h5f%read('datasets', 'integer_r1', integer_read)
@@ -266,7 +266,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       datachunk = integer_r1(first : last)
@@ -311,7 +311,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over second rank
@@ -377,7 +377,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over third rank
@@ -449,7 +449,7 @@ contains
       real_write = 0.213_real32
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
       call h5f%write('datasets', 'real_r1', real_write)
       call h5f%read('datasets', 'real_r1', real_read)
@@ -486,7 +486,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       datachunk = real_r1(first : last)
@@ -532,7 +532,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over second rank
@@ -598,7 +598,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over third rank
@@ -682,7 +682,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over fourth rank
@@ -770,7 +770,7 @@ contains
       real_write = 0.213_real64
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
       call h5f%write('datasets', 'real_r1', real_write)
       call h5f%read('datasets', 'real_r1', real_read)
@@ -807,7 +807,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       datachunk = real_r1(first : last)
@@ -853,7 +853,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over second rank
@@ -919,7 +919,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over third rank
@@ -1003,7 +1003,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over fourth rank
@@ -1101,7 +1101,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
       datachunk = cmplx_r1(first : last)
       datachunk_read = datachunk
@@ -1146,7 +1146,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over second rank
@@ -1212,7 +1212,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over third rank
@@ -1297,7 +1297,7 @@ contains
       end do
 
       call h5f%init('test_file.h5', mpiglobal)
-      call h5f%initialize_group('./', 'datasets')
+      call h5f%init_group('./', 'datasets')
 
 
       ! Distribute writing over fourth rank
