@@ -12,8 +12,7 @@
 !> Therefore it does absolutely make no sense to use them in loops.
 !> If you are tempted to do this, you should seriously rethink about your data layout!
 !>
-!> For examples how to use the library we refer kindly to the unit tests (`[[solhdf5_test.f90]]).
-!> These show all examples of usage.
+!> For examples how to use the library we refer kindly to the unit tests in `test/src`.
 !>
 !> Be aware of that the writing routines will overwrite an existing data set with the same name.
 module solhdf5
@@ -599,7 +598,7 @@ contains
 
    !> Read a boolean to an HDF5 file.
    !> The boolean is not saved as a boolean in the file but as a string representing the state
-   !> of the boolean. See [[read_bool]].
+   !> of the boolean.
    subroutine read_bool(this, h5path, dataset, bool)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this

@@ -27,7 +27,7 @@ contains
 
 
    !> Assert that the HDF5 error flag `h5err` is zero.
-   !> If not, call [[terminate_mpi_comm]] with an error message containing the name of `calling_routine`.
+   !> If not, call [[terminate]] with an error message containing the name of `calling_routine`.
    subroutine handle_hdf5_error(mpi_comm, calling_routine, h5err)
       !> MPI communicator.
       type(mpi_comm_type), intent(in) :: mpi_comm

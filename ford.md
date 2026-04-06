@@ -2,21 +2,25 @@
 project: solhdf5
 summary: Fortran HDF5 Utility Library with MPI Support
 author: Benedikt Maurer
-src_dir: ./src
 output_dir: ./doc
-exclude_dir: ./build_parallel
+exclude_dir: ./build*
 project_github: https://github.com/benediktmaurer/solhdf5
-docmark: !>
-predocmark:
-docmark_alt: !!
-predocmark_alt:
-warn: true
-quiet: false
-print_creation_date: true
-display: [public, protected, private]
-source: true
-graph: true
-search: true
+predocmark: >  
+docmark: !  
+display: public  
+graph: false  
+warn: false  
+search: false  
+proc_internals: false  
+src_dir: ./src/
+         ./src/hdf5_wrappers
+         ./src/utitilities
+         ./src/templates 
+
+[//]: # "Note, ford commands can not be separated by whitelines."  
+[//]: # "More information on ford's project file options can be found at:"  
+[//]: # "https://github.com/Fortran-FOSS-Programmers/ford/wiki/Project-File-Options"  
+
 ---
 
 # solhdf5 Documentation
@@ -65,16 +69,16 @@ search: true
 use solhdf5
 
 type(h5file_t) :: h5file
-real(real64), allocatable :: data(:,:)
+real(real64), allocatable :: buffer(:,:)
 
 ! Initialize HDF5 file
 call h5file%init("output.h5")
 
 ! Write 2D matrix
-call h5file%write("group/dataset", data)
+call h5file%write("group", "dataset", buffer)
 
-! Read data back
-call h5file%read("group/dataset", data)
+! Read buffer back
+call h5file%read("group", "dataset", buffer)
 
 ! Clean up
 call h5file%delete()
@@ -87,13 +91,17 @@ use solhdf5
 use mpi_f08
 
 type(h5file_t) :: h5file
-real(real64), allocatable :: local_data(:,:)
+integer, parameter :: global_size(2) = [100, 100]
+integer :: buffer_start(2)
+real(real64), allocatable :: local_buffer(:,:)
+
 
 ! Initialize with MPI communicator
 call h5file%init("parallel_output.h5", MPI_COMM_WORLD)
 
-! Write distributed data (automatic hyperslab management)
-call h5file%write("distributed_data", local_data)
+! Write distributed data
+! Obtain buffer_start and local_buffer based on MPI rank and global_size
+call h5file%write("/", "distributed_data", local_data, datastart=buffer_start, datasize=global_size)
 
 call h5file%delete()
 ```
@@ -110,15 +118,6 @@ The library consists of several key modules:
 - **`hdf5_write`/`hdf5_read`**: I/O operations with hyperslab support
 - **`hyperslab`**: Complex data distribution utilities
 - **`mpi_utils`**: MPI communicator and rank management
-
-## Data Distribution Patterns
-
-The library supports several hyperslab patterns for parallel I/O:
-
-- **Row Distribution**: Data distributed across MPI ranks by rows
-- **Column Distribution**: Data distributed by columns
-- **Block Distribution**: 2D block-cyclic distribution patterns
-- **Contiguous/Non-contiguous**: Flexible data layout support
 
 ## Build System
 
