@@ -1,6 +1,6 @@
-# hdf5fort
+# solhdf5
 
-`hdf5fort` is a Fortran HDF5 utility library with MPI-aware test coverage. It provides wrappers and utilities for easier HDF5 file, group, dataset, and datatype handling in Fortran.
+`solhdf5` is a Fortran HDF5 utility library with MPI-aware test coverage. It provides wrappers and utilities for easier HDF5 file, group, dataset, and datatype handling in Fortran.
 
 ## Repository layout
 

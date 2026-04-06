@@ -1,28 +1,23 @@
 ---
-project: hdf5fort
+project: solhdf5
 summary: Fortran HDF5 Utility Library
 author: Benedikt Maurer
 src_dir: ./src
 output_dir: ./doc
 exclude_dir: ./build_parallel
-project_github: https://github.com/benediktmaurer/hdf5fort
-project_gitlab: 
-project_sourceforge: 
-project_download: 
-project_sourceforge: 
+project_github: https://github.com/benediktmaurer/solhdf5
 docmark: !>
-predocmark: !>
+predocmark: 
 docmark_alt: !!
-predocmark_alt: !!
-warn: .true.
-quiet: .false.
-coloured_output: .true.
-print_creation_date: .true.
+predocmark_alt: 
+warn: true
+quiet: false
+print_creation_date: true
 predocmark_alt: !!
 docmark_alt: !!
 ---
 
-# hdf5fort Documentation
+# solhdf5 Documentation
 
 Fortran HDF5 utility library with MPI-aware parallel I/O support. This library provides easy-to-use wrappers for HDF5 file operations, group management, and dataset I/O.
 
