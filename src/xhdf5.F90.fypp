@@ -98,7 +98,7 @@ module xhdf5
          generic :: &
          read => &
          read_string, &
-         read_bool &
+         read_bool, &
 #:for idx, item in enumerate(numeric_types)
          read_${item[0]}$ #{if idx < len(numeric_types) - 1}#, & #{endif}#
 #:endfor
@@ -464,13 +464,19 @@ contains
    !> Handles what to do if a data set already exists.
    !> If this is the case, the data set will be overwritten with new data.
    !> In debug mode, a warning is printed to the terminal.
-   subroutine handle_if_dataset_exists(this, h5path, datasetname)
+   subroutine handle_if_dataset_exists(this, h5path, datasetname, no_overwrite)
       !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
       !> Absolute path in the hdf5 file.
       character(*), intent(in) :: h5path
       !> Dataset name.
       character(*), intent(in) :: datasetname
+      !> If `.true.`, return. If `.false.` delete data set.
+      logical, intent(in), optional :: no_overwrite
+
+      if (present(no_overwrite)) then 
+         if (no_overwrite) return 
+      end if 
 
       if (this%link_exists(join_paths(h5path, datasetname))) then
          this%n_overwritten_datasets = this%n_overwritten_datasets + 1
@@ -624,19 +630,45 @@ contains
 #:for suffix, ft_type, h5type_expr, complex_flag in numeric_types
 
    ! ---- ${ft_type}$
-   subroutine write_${suffix}$(this, h5path, dataset, buffer, datastart, datasize, hyperslabs)
+   !> Write a `${ft_type}$` array of arbitrary rank to an HDF5 file.
+   !>
+   !> The data is written as a dataset named `dataset` inside the group `h5path`. The selection
+   !> of the region to write can be controlled either with the simple `datastart`/`datasize`
+   !> arguments or, for more complex selections, with `hyperslabs`. If neither is given, the
+   !> whole `buffer` is written. In an MPI environment, each process writes its own portion of
+   !> the dataset in parallel.
+   subroutine write_${suffix}$(this, h5path, dataset, buffer, datastart, datasize, hyperslabs, no_overwrite)
+      !> HDF5 file handler.
       class(h5file_t), intent(inout) :: this
+      !> Absolute path in the HDF5 file to the group to write the data set to.
       character(*), intent(in) :: h5path
+      !> Name of the data set to write.
       character(*), intent(in) :: dataset
+      !> Array to write. May be of any rank.
       ${ft_type}$, intent(in), contiguous, target :: buffer(..)
+      !> Index of the first element (per dimension) at which `buffer` is placed in the dataset.
+      !> Defaults to the start of the dataset. Ignored if `hyperslabs` is present.
       integer(int32), intent(in), optional :: datastart(:)
+      !> Global shape of the dataset on disk. Defaults to the shape of `buffer`.
+      !> Ignored if `hyperslabs` is present.
       integer(int32), intent(in), optional :: datasize(:)
+      !> Explicit hyperslab selection(s) describing the region of the dataset to write.
+      !> Takes precedence over `datastart` and `datasize`.
       type(hyperslab_type), intent(in), optional :: hyperslabs(:)
+      !> If `.true.`, keep an existing dataset intact and write `buffer` into the hyperslab-
+      !> selected region of it. The dataset must already exist with a compatible shape.
+      !> Defaults to `.false.`, in which case any existing dataset is deleted and recreated.
+      logical, intent(in), optional :: no_overwrite
 
       integer(int32), allocatable :: datasize_local(:), datastart_local(:)
       type(hyperslab_type), allocatable :: hyperslabs_use(:)
       type(c_ptr) :: buffer_ptr
       ${ft_type}$, target :: dummy_buffer
+      logical :: no_overwrite_local
+
+
+      no_overwrite_local = .false.
+      if(present(no_overwrite)) no_overwrite_local = no_overwrite
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
@@ -655,22 +687,36 @@ contains
          call hyperslabs_use(1)%init(shape(buffer, kind=int32), datasize_local, [-1], datastart_local, [-1], [-1], [-1], ${complex_flag}$)
       endif
 
-      call this%handle_if_dataset_exists(h5path, dataset)
+      call this%handle_if_dataset_exists(h5path, dataset, no_overwrite_local)
       if(product(shape(buffer, kind=int32)) == 0) then
          buffer_ptr = c_loc(dummy_buffer)
       else
          buffer_ptr = c_loc(buffer)
       end if
       call hdf5_write_dataset(this%mpi_comm, this%file_id, h5path, dataset, ${h5type_expr}$, buffer_ptr, &
-         hyperslabs_use, this%serial_access)
+         hyperslabs_use, this%serial_access, no_overwrite_local)
       end subroutine write_${suffix}$
 
+      !> Read a `${ft_type}$` array of arbitrary rank from an HDF5 file.
+      !>
+      !> The dataset named `dataset` inside the group `h5path` is read into `buffer`. The region
+      !> to read can be controlled with the simple `datastart` argument or, for more complex
+      !> selections, with `hyperslabs`. If neither is given, the whole dataset is read. In an MPI
+      !> environment, each process reads its own portion of the dataset in parallel.
       subroutine read_${suffix}$(this, h5path, dataset, buffer, datastart, hyperslabs)
+         !> HDF5 file handler.
          class(h5file_t), intent(inout) :: this
+         !> Absolute path in the HDF5 file to the group to read the data set from.
          character(*), intent(in) :: h5path
+         !> Name of the data set to read from.
          character(*), intent(in) :: dataset
+         !> Array the data is read into. May be of any rank.
          ${ft_type}$, intent(inout), contiguous, target :: buffer(..)
+         !> Index of the first element (per dimension) in the dataset to start reading from.
+         !> Defaults to the start of the dataset. Ignored if `hyperslabs` is present.
          integer(int32), intent(in), optional :: datastart(:)
+         !> Explicit hyperslab selection(s) describing the region of the dataset to read.
+         !> Takes precedence over `datastart`.
          type(hyperslab_type), intent(in), optional :: hyperslabs(:)
 
          integer(int32), allocatable :: datasize_file(:), datastart_local(:)

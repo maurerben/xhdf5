@@ -1,0 +1,506 @@
+!> Unit tests for write and read numerical vector (rank 1 array) routines
+
+#! List of numeric types to generate tests for.
+#! Each entry: (suffix, type label, value class, real kind)
+#:set vector_types = [ &
+('integer_int32',  'integer(int32)',  'int',     ''),       &
+('real_real32',    'real(real32)',    'real',    'real32'),  &
+('real_real64',    'real(real64)',    'real',    'real64'),  &
+('complex_real32', 'complex(real32)', 'complex', 'real32'),  &
+('complex_real64', 'complex(real64)', 'complex', 'real64')   &
+]
+
+#! Value stored at vector element i for a given (1-based) global index expression.
+#:def vecval(vclass, rkind, idx)
+#{if vclass == 'int'}#${idx}$#{elif vclass == 'real'}#real(${idx}$, ${rkind}$) + 0.5_${rkind}$#{else}#cmplx(real(${idx}$, ${rkind}$), real(${idx}$, ${rkind}$) + 0.5, ${rkind}$)#{endif}#
+#:enddef
+
+#! Comparison between read_vector and the reference vector `ref`.
+#:def veccompare(vclass, ref)
+#{if vclass == 'int'}#all(read_vector == ${ref}$)#{elif vclass == 'real'}#all(abs(read_vector - ${ref}$) < epsilon(${ref}$))#{else}#all(abs(read_vector - ${ref}$) < epsilon(real(${ref}$)))#{endif}#
+#:enddef
+
+program write_read_numerical_vector_test
+#ifdef MPI
+   use mpi_f08
+#endif
+   use iso_fortran_env, only: output_unit, real32, real64, int32
+   use xhdf5
+   use mpi_utils
+
+   implicit none
+
+   integer :: num_tests = 0
+   integer :: num_passed = 0
+   integer :: num_failed = 0
+#ifdef MPI
+   integer :: mpi_err, comm_size, my_rank
+#endif
+
+#ifdef MPI
+   ! Initialize MPI
+   call mpi_init(mpi_err)
+   call mpi_comm_size(MPI_COMM_WORLD, comm_size, mpi_err)
+   call mpi_comm_rank(MPI_COMM_WORLD, my_rank, mpi_err)
+#endif
+
+   write(output_unit, '(a)') "=========================================="
+   write(output_unit, '(a)') "  xhdf5 Numerical Vector Unit Tests"
+   write(output_unit, '(a)') "=========================================="
+   write(output_unit, *)
+
+#ifdef _HDF5_
+#:for suffix, type_label, vclass, rkind in vector_types
+   ! Test ${type_label}$ vectors
+   call test_write_read_${suffix}$_vector()
+   call test_write_read_${suffix}$_vector_serial()
+   call test_write_read_${suffix}$_vector_no_overwrite()
+
+#:endfor
+#ifdef MPI
+   ! Test uneven data distribution
+   call test_write_read_integer_int32_vector_uneven()
+
+   ! Test non-contiguous data distribution
+   call test_write_read_integer_int32_vector_noncontiguous()
+#endif
+
+#else
+   write(output_unit, '(a)') "HDF5 not available - tests skipped"
+#endif
+
+   ! Summary
+#ifdef MPI
+   write(output_unit, *)
+   write(output_unit, '(a)') "=========================================="
+   write(output_unit, '(a,i0,a,i0,a,i0)') "Results: ", num_passed, " passed, ", &
+      num_failed, " failed out of ", num_tests, " tests (MPI_COMM_WORLD size: ", comm_size, ")"
+   write(output_unit, '(a)') "=========================================="
+#else
+   write(output_unit, *)
+   write(output_unit, '(a)') "=========================================="
+   write(output_unit, '(a,i0,a,i0,a,i0)') "Results: ", num_passed, " passed, ", &
+      num_failed, " failed out of ", num_tests, " tests"
+   write(output_unit, '(a)') "=========================================="
+#endif
+
+   ! Exit with appropriate code
+   if (num_failed > 0) then
+#ifdef MPI
+      call mpi_finalize(mpi_err)
+#endif
+      stop 1
+   end if
+
+#ifdef MPI
+   ! Finalize MPI
+   call mpi_finalize(mpi_err)
+#endif
+
+contains
+
+#:for suffix, type_label, vclass, rkind in vector_types
+   ! Test for ${type_label}$ vector
+   subroutine test_write_read_${suffix}$_vector()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ vector (parallel mode)"
+      character(*), parameter :: filename = "test_${suffix}$_vector_parallel.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_vector"
+      integer(int32), parameter :: elements_per_rank = 10
+      integer(int32), parameter :: total_elements = 20
+      ${type_label}$, allocatable :: local_vector(:), read_vector(:)
+      integer(int32) :: start_idx, local_size, i
+#ifdef MPI
+      integer(int32) :: datastart(1), datasize(1)
+#endif
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Init file in parallel mode
+      call h5file%init(filename, serial_access=.false.)
+
+      if (h5file%is_open()) then
+#ifdef MPI
+         ! Set up data distribution: rank 0 gets 1-10, rank 1 gets 11-20, etc.
+         start_idx = my_rank * elements_per_rank + 1
+         local_size = elements_per_rank
+
+         allocate(local_vector(local_size))
+         allocate(read_vector(local_size))
+         do i = 1, local_size
+            local_vector(i) = ${vecval(vclass, rkind, "start_idx + i - 1")}$
+         end do
+
+         ! Set up hyperslab for this rank's portion. The dataset size is the total size for collective I/O.
+         datastart(1) = start_idx
+         datasize(1) = local_size * comm_size
+
+         call h5file%write(h5path, dataset, local_vector, datastart=datastart, datasize=datasize)
+         write(output_unit, '(a,i0,a,i0,a,i0)') "    Rank ", my_rank, " wrote elements ", start_idx, " to ", start_idx + local_size - 1
+
+         call h5file%read(h5path, dataset, read_vector, datastart=datastart)
+
+         if (${veccompare(vclass, "local_vector")}$) then
+            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
+            num_passed = num_passed + 1
+         else
+            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
+            num_failed = num_failed + 1
+         end if
+
+         deallocate(local_vector, read_vector)
+#else
+         ! Single process mode - write and read the full vector
+         allocate(local_vector(total_elements))
+         allocate(read_vector(total_elements))
+         do i = 1, total_elements
+            local_vector(i) = ${vecval(vclass, rkind, "i")}$
+         end do
+
+         call h5file%write(h5path, dataset, local_vector)
+         write(output_unit, '(a)') "    Full vector written successfully"
+
+         call h5file%read(h5path, dataset, read_vector)
+
+         if (${veccompare(vclass, "local_vector")}$) then
+            write(output_unit, '(a)') "    Vector read matches written values"
+            num_passed = num_passed + 1
+         else
+            write(output_unit, '(a)') "    Vector read mismatch"
+            num_failed = num_failed + 1
+         end if
+
+         deallocate(local_vector, read_vector)
+#endif
+         call h5file%delete()
+      else
+         write(output_unit, '(a)') "    File initialization failed"
+         num_failed = num_failed + 1
+      end if
+
+      write(output_unit, *)
+   end subroutine test_write_read_${suffix}$_vector
+
+   ! Test for ${type_label}$ vector - serial mode
+   subroutine test_write_read_${suffix}$_vector_serial()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ vector (serial mode)"
+      character(*), parameter :: filename = "test_${suffix}$_vector_serial.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_vector"
+      integer(int32), parameter :: total_elements = 20
+      ${type_label}$, allocatable :: full_vector(:), read_vector(:)
+      integer(int32) :: i
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Initialize MPI communicator first to check rank
+      call init_with_mpi_comm_world(h5file%mpi_comm)
+
+      ! Only root process performs serial HDF5 operations
+      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+         ! Init file in serial mode (only root process allowed)
+         call h5file%init(filename, serial_access=.true.)
+
+         if (h5file%is_open()) then
+            ! Create and write full vector
+            allocate(full_vector(total_elements))
+            allocate(read_vector(total_elements))
+            do i = 1, total_elements
+               full_vector(i) = ${vecval(vclass, rkind, "i")}$
+            end do
+
+            call h5file%write(h5path, dataset, full_vector)
+            write(output_unit, '(a)') "    Full vector written successfully"
+
+            call h5file%read(h5path, dataset, read_vector)
+
+            if (${veccompare(vclass, "full_vector")}$) then
+               write(output_unit, '(a)') "    Vector read matches written values"
+               num_passed = num_passed + 1
+            else
+               write(output_unit, '(a)') "    Vector read mismatch"
+               num_failed = num_failed + 1
+            end if
+
+            deallocate(full_vector, read_vector)
+            call h5file%delete()
+         else
+            write(output_unit, '(a)') "    File initialization failed"
+            num_failed = num_failed + 1
+         end if
+      else
+         ! Non-root processes should not participate in the test
+         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+         num_passed = num_passed + 1  ! Count as passed since this is expected behavior
+      end if
+
+      write(output_unit, *)
+   end subroutine test_write_read_${suffix}$_vector_serial
+
+   ! Test for ${type_label}$ vector - no_overwrite (update a sub-region in place)
+   subroutine test_write_read_${suffix}$_vector_no_overwrite()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ vector (no_overwrite, serial mode)"
+      character(*), parameter :: filename = "test_${suffix}$_vector_no_overwrite.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_vector"
+      integer(int32), parameter :: total_elements = 20
+      integer(int32), parameter :: region_start = 6, region_size = 8
+      ${type_label}$, allocatable :: full_vector(:), region_vector(:), read_vector(:), expected_vector(:)
+      integer(int32) :: i
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Initialize MPI communicator first to check rank
+      call init_with_mpi_comm_world(h5file%mpi_comm)
+
+      ! Only root process performs serial HDF5 operations
+      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+         ! Init file in serial mode (only root process allowed)
+         call h5file%init(filename, serial_access=.true.)
+
+         if (h5file%is_open()) then
+            allocate(full_vector(total_elements))
+            allocate(read_vector(total_elements))
+            allocate(expected_vector(total_elements))
+            allocate(region_vector(region_size))
+
+            ! Create the initial full dataset
+            do i = 1, total_elements
+               full_vector(i) = ${vecval(vclass, rkind, "i")}$
+            end do
+            call h5file%write(h5path, dataset, full_vector)
+
+            ! New, distinct values for the sub-region [region_start, region_start+region_size-1]
+            do i = 1, region_size
+               region_vector(i) = ${vecval(vclass, rkind, "region_start + i - 1 + total_elements")}$
+            end do
+            call h5file%write(h5path, dataset, region_vector, &
+               datastart=[region_start], datasize=[total_elements], no_overwrite=.true.)
+
+            ! Expected result: the sub-region is replaced, everything else is preserved
+            do i = 1, total_elements
+               if (i >= region_start .and. i <= region_start + region_size - 1) then
+                  expected_vector(i) = ${vecval(vclass, rkind, "i + total_elements")}$
+               else
+                  expected_vector(i) = ${vecval(vclass, rkind, "i")}$
+               end if
+            end do
+
+            call h5file%read(h5path, dataset, read_vector)
+
+            ! Sub-region updated, the rest preserved, and no dataset deleted + recreated
+            if (${veccompare(vclass, "expected_vector")}$ .and. h5file%n_overwritten_datasets == 0) then
+               write(output_unit, '(a)') "    no_overwrite updated sub-region and preserved the rest"
+               num_passed = num_passed + 1
+            else
+               write(output_unit, '(a)') "    no_overwrite mismatch"
+               num_failed = num_failed + 1
+            end if
+
+            deallocate(full_vector, region_vector, read_vector, expected_vector)
+            call h5file%delete()
+         else
+            write(output_unit, '(a)') "    File initialization failed"
+            num_failed = num_failed + 1
+         end if
+      else
+         ! Non-root processes should not participate in the test
+         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+         num_passed = num_passed + 1  ! Count as passed since this is expected behavior
+      end if
+
+      write(output_unit, *)
+   end subroutine test_write_read_${suffix}$_vector_no_overwrite
+
+#:endfor
+   ! Test for uneven data distribution (different ranks write different amounts)
+   subroutine test_write_read_integer_int32_vector_uneven()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test: Write and read integer(int32) vector (uneven distribution)"
+      character(*), parameter :: filename = "test_integer_int32_vector_uneven.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_vector"
+      integer(int32), allocatable :: local_vector(:), read_vector(:)
+      integer(int32) :: local_size, start_idx, i
+      type(hyperslab_type), allocatable :: hyperslabs(:)
+      integer(int32) :: datastart(1), datasize(1)
+
+#ifdef MPI
+
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      ! Init file in parallel mode
+      call h5file%init(filename, serial_access=.false.)
+
+      if (h5file%is_open()) then
+         ! Uneven distribution: rank 0 writes 7 elements, rank 1 writes 18 elements
+         if (my_rank == 0) then
+            local_size = 7
+            start_idx = 1
+         else if (my_rank == 1) then
+            local_size = 18
+            start_idx = 8
+         else
+            ! For more than 2 ranks, distribute remaining elements
+            local_size = 25
+            start_idx = 26 + (my_rank - 2) * local_size
+         end if
+
+         allocate(local_vector(local_size))
+         allocate(read_vector(local_size))
+         allocate(hyperslabs(1))
+
+         ! Create local data
+         do i = 1, local_size
+            local_vector(i) = start_idx + i - 1
+         end do
+
+         ! Set up hyperslab for this rank's portion
+         datastart(1) = start_idx
+         if(comm_size == 1) then
+            datasize(1) = local_size  ! Single rank writes all elements
+         else
+            datasize(1) = 25 + (comm_size - 2) * 25  ! Total size: 7 + 18 + 25*(comm_size-1)
+         end if
+
+         call hyperslabs(1)%init(shape(local_vector, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
+
+         write(output_unit, '(a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing ", local_size, " elements starting at ", start_idx
+
+         ! Write using hyperslabs
+         call h5file%write(h5path, dataset, local_vector, hyperslabs=hyperslabs)
+
+         ! Read back using the same hyperslab
+         call h5file%read(h5path, dataset, read_vector, hyperslabs=hyperslabs)
+
+         ! Check if values match
+         if (all(read_vector == local_vector)) then
+            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
+            num_passed = num_passed + 1
+         else
+            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
+            num_failed = num_failed + 1
+         end if
+
+         deallocate(local_vector, read_vector, hyperslabs)
+
+         call h5file%delete()
+      else
+         write(output_unit, '(a)') "    File initialization failed"
+         num_failed = num_failed + 1
+      end if
+#else
+      ! Single process mode - do nothing
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+      write(output_unit, '(a)') "    Single process mode - skipping uneven distribution test"
+      num_passed = num_passed + 1  ! Count as passed since this is expected behavior
+#endif
+
+
+      write(output_unit, *)
+   end subroutine test_write_read_integer_int32_vector_uneven
+
+   ! Test for non-contiguous data distribution (multiple hyperslab selections per rank)
+   subroutine test_write_read_integer_int32_vector_noncontiguous()
+      type(h5file_t) :: h5file
+      character(*), parameter :: test_name = "Test: Write and read integer(int32) vector (non-contiguous distribution)"
+      character(*), parameter :: filename = "test_integer_int32_vector_noncontiguous.h5"
+      character(*), parameter :: h5path = "/"
+      character(*), parameter :: dataset = "test_vector"
+      integer(int32), parameter :: elements_per_block = 3  ! Elements per contiguous block
+      integer(int32), parameter :: num_blocks = 2  ! Number of blocks per rank
+      integer(int32), allocatable :: local_vector(:), read_vector(:)
+      integer(int32) :: local_size, block_start, i, block_idx
+      type(hyperslab_type), allocatable :: hyperslabs(:)
+      integer(int32) :: datastart(1), datasize(1), memstart(1), memsize(1)
+#ifdef MPI
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+
+      if (comm_size < 2) then
+         write(output_unit, '(a)') "    Test requires at least 2 MPI ranks - skipping"
+         num_passed = num_passed + 1
+         write(output_unit, *)
+         return
+      end if
+
+      ! Init file in parallel mode
+      call h5file%init(filename, serial_access=.false.)
+
+      if (h5file%is_open()) then
+         ! Non-contiguous distribution: each rank writes to 2 separate blocks
+         ! Rank 0: blocks at positions 1-3 and 7-9
+         ! Rank 1: blocks at positions 4-6 and 10-12
+         local_size = elements_per_block * num_blocks
+         allocate(local_vector(local_size))
+         allocate(read_vector(local_size))
+         allocate(hyperslabs(num_blocks))
+
+         ! Create local data and hyperslabs
+         do block_idx = 1, num_blocks
+            if (my_rank == 0) then
+               block_start = (block_idx - 1) * 6 + 1  ! 1 and 7
+            else if (my_rank == 1) then
+               block_start = (block_idx - 1) * 6 + 4  ! 4 and 10
+            else
+               ! For additional ranks, distribute in pattern
+               block_start = 13 + (my_rank - 2) * 6 + (block_idx - 1) * 3
+            end if
+
+            ! Fill data for this block
+            do i = 1, elements_per_block
+               local_vector((block_idx-1)*elements_per_block + i) = block_start + i - 1
+            end do
+
+            ! Set up hyperslab for this block
+            datastart(1) = block_start
+            datasize(1) = local_size * comm_size  ! Total dataset size in file
+            memstart(1) = (block_idx - 1) * elements_per_block + 1
+            memsize(1) = local_size
+
+            call hyperslabs(block_idx)%init([elements_per_block], datasize, memsize, datastart, memstart, [-1], [-1], .false.)
+         end do
+
+         write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " writing non-contiguous blocks"
+
+         ! Write using multiple hyperslabs
+         call h5file%write(h5path, dataset, local_vector, hyperslabs=hyperslabs)
+
+         ! Read back using the same hyperslabs
+         call h5file%read(h5path, dataset, read_vector, hyperslabs=hyperslabs)
+
+         ! Check if values match
+         if (all(read_vector == local_vector)) then
+            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
+            num_passed = num_passed + 1
+         else
+            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
+            num_failed = num_failed + 1
+         end if
+
+         deallocate(local_vector, read_vector, hyperslabs)
+         call h5file%delete()
+      else
+         write(output_unit, '(a)') "    File initialization failed"
+         num_failed = num_failed + 1
+      end if
+
+#else
+      ! Single process mode - do nothing
+      num_tests = num_tests + 1
+      write(output_unit, '(a)') test_name
+      write(output_unit, '(a)') "    Single process mode - skipping uneven distribution test"
+      num_passed = num_passed + 1  ! Count as passed since this is expected behavior
+#endif
+      write(output_unit, *)
+   end subroutine test_write_read_integer_int32_vector_noncontiguous
+
+end program write_read_numerical_vector_test

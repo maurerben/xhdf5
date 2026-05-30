@@ -143,7 +143,11 @@ contains
       call execute_command_line("rm -f " // filename)
 
       ! Init file
+#ifdef MPI
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
+#else
+      call h5file%init(filename, serial_access=.false.)
+#endif
 
       if (h5file%is_open()) then
          group_name = "test_group_update"
@@ -247,7 +251,11 @@ contains
       call execute_command_line("rm -f " // filename)
 
       ! Init file
+#ifdef MPI
       call h5file%init(filename, MPI_COMM_WORLD, serial_access=.false.)
+#else
+      call h5file%init(filename, serial_access=.false.)
+#endif
 
       if (h5file%is_open()) then
          ! Create group

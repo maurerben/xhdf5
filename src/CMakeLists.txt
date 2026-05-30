@@ -4,38 +4,10 @@ file(GLOB_RECURSE xhdf5_SOURCES
   "*.f90"
 )
 
-find_program(FYPP_EXECUTABLE NAMES fypp)
-
-if(NOT FYPP_EXECUTABLE)
-  find_package(Python3 QUIET COMPONENTS Interpreter)
-  if(Python3_Interpreter_FOUND)
-    execute_process(
-      COMMAND ${Python3_EXECUTABLE} -c "import fypp"
-      RESULT_VARIABLE FYPP_PYTHON_RESULT
-      OUTPUT_QUIET
-      ERROR_QUIET
-    )
-    if(FYPP_PYTHON_RESULT EQUAL 0)
-      set(FYPP_EXECUTABLE ${Python3_EXECUTABLE})
-      set(FYPP_COMMAND -m fypp)
-    endif()
-  endif()
-endif()
-
-if(NOT FYPP_EXECUTABLE)
-  message(FATAL_ERROR "fypp is required to build xhdf5. Install the 'fypp' executable or the Python module.")
-endif()
-
 set(xhdf5_FYPP_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/xhdf5.F90.fypp")
 set(xhdf5_GENERATED_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/xhdf5.F90")
 
-add_custom_command(
-  OUTPUT ${xhdf5_GENERATED_SOURCE}
-  COMMAND ${FYPP_EXECUTABLE} ${FYPP_COMMAND} ${xhdf5_FYPP_SOURCE} ${xhdf5_GENERATED_SOURCE}
-  DEPENDS ${xhdf5_FYPP_SOURCE}
-  COMMENT "Generating xhdf5.F90 from fypp"
-  VERBATIM
-)
+fypp_generate(${xhdf5_FYPP_SOURCE} ${xhdf5_GENERATED_SOURCE})
 
 list(APPEND xhdf5_SOURCES ${xhdf5_GENERATED_SOURCE})
 

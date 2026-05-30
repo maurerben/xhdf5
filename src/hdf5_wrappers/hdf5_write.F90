@@ -1,27 +1,29 @@
 !> Wrapper for writing any data set to an HDF5 file
 module hdf5_write
-   use iso_c_binding, only: c_ptr
-#ifdef _HDF5_
-   use hdf5
+  use iso_c_binding, only: c_ptr
+  use hdf5_dataset
+
+#ifdef _HDF5_  
+  use hdf5
 #endif
 
    use error_handling, only: handle_hdf5_error, assert_true
    use hdf5_globals, only: hdf5_id, hdf5_size, hdf5_ssize, file_id_undefined
-   use mpi_utils, only: mpi_comm_type
+  use mpi_utils, only: mpi_comm_type
    use hyperslab, only: hyperslab_type, check_hyperslabs
 
 
-   implicit none
+  implicit none
+  
+
+  private
+  public :: hdf5_write_dataset
 
 
-   private
-   public :: hdf5_write_dataset
-
-
-contains
+  contains 
 
    !> Write a data set or chunk of an data set of any type and shape to file.
-   subroutine hdf5_write_dataset(mpi_comm, file_id, h5path, dataset, dataset_type, buffer_ptr, hyperslabs, serial_access)
+   subroutine hdf5_write_dataset(mpi_comm, file_id, h5path, dataset, dataset_type, buffer_ptr, hyperslabs, serial_access, append)
       !> MPI communicator handle
       type(mpi_comm_type), intent(in) :: mpi_comm
       !> Identifier of the file or group, used by HDF5.
@@ -38,15 +40,21 @@ contains
       type(hyperslab_type) :: hyperslabs(:)
       !> Set to `.true.` if only serial access is possible.
       logical, intent(in) :: serial_access
+      !> If `.true.`, open the existing dataset and write to the hyperslab-selected region
+      !> instead of creating a new one. The dataset must already exist. Defaults to `.false.`.
+      logical, intent(in), optional :: append
 
 #ifdef _HDF5_
       type(hyperslab_type) :: hyperslab
-      logical :: overwrite_local
+      logical :: append_local
       integer(hdf5_id) :: group_id, dataspace_id, dataset_id, memspace_id, file_id_plist
       integer :: h5err, hsdx, hs_operator
       integer :: rank
       integer(hdf5_size), allocatable :: memsize(:), datasize(:), memsize_use(:)
       logical :: has_selection
+
+      append_local = .false.
+      if(present(append)) append_local = append
 
       call assert_true(file_id /= file_id_undefined, &
          'Error(hdf5_write_dataset): HDF5 file is not initialized.')
@@ -58,84 +66,90 @@ contains
       datasize = hyperslabs(1)%datasize
       memsize_use = max(memsize, int(1, hdf5_size))
       ! Todo(Bene): assert that hyperslabs makes sense
-
-      ! Create dataspace
-      call h5screate_simple_f(rank, datasize, dataspace_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5screate_simple_f', h5err)
-
-      ! Create memory space
-      call h5screate_simple_f(rank, memsize_use, memspace_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5screate_simple_f', h5err)
-
-      has_selection = .false.
-      do hsdx=1, size(hyperslabs)
-         if(any(hyperslabs(hsdx)%count == 0)) cycle
-
-         if(hsdx==1) then
-            hs_operator = H5S_SELECT_SET_F
-         else
-            hs_operator = H5S_SELECT_OR_F ! Join hyperslabs
-         end if
-
-         ! dataspace
-         call h5sselect_hyperslab_f(dataspace_id, hs_operator, hyperslabs(hsdx)%datastart, hyperslabs(hsdx)%count, h5err, &
-            hyperslabs(hsdx)%stride, hyperslabs(hsdx)%datablock)
-         call handle_hdf5_error(mpi_comm, 'h5sselect_hyperslab_f:dataspace', h5err)
-
-         ! memspace
-         call h5sselect_hyperslab_f(memspace_id, hs_operator, hyperslabs(hsdx)%memstart, hyperslabs(hsdx)%count, h5err, &
-            hyperslabs(hsdx)%stride, hyperslabs(hsdx)%datablock)
-         call handle_hdf5_error(mpi_comm, 'h5sselect_hyperslab_f:memspace', h5err)
-         has_selection = .true.
-      end do
-
-      if(.not. has_selection) then
-         call h5sselect_none_f(dataspace_id, h5err)
-         call handle_hdf5_error(mpi_comm, 'h5sselect_none_f:dataspace', h5err)
-         call h5sselect_none_f(memspace_id, h5err)
-         call handle_hdf5_error(mpi_comm, 'h5sselect_none_f:memspace', h5err)
-      end if
-
-      ! Create a property list to enable parallel writing, if MPI is used.
-      call h5pcreate_f(H5P_DATASET_XFER_F, file_id_plist, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5pcreate_f', h5err)
-
-#ifdef MPI
-      if(.not. serial_access) then
-         call h5pset_dxpl_mpio_f(file_id_plist, H5FD_MPIO_COLLECTIVE_F, h5err)
-         call handle_hdf5_error(mpi_comm, 'h5pset_dxpl_mpio_f', h5err)
-      end if
-#endif
-
+      
       ! Open group to write the data set in
       call h5gopen_f(file_id, h5path, group_id, h5err)
       call handle_hdf5_error(mpi_comm, 'h5gopen_f' ,h5err)
-
-      ! Create dataset in file
-      call h5dcreate_f(group_id, dataset, dataset_type, dataspace_id, dataset_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5dcreate', h5err)
-
-      ! Write data to file
-      call h5dwrite_f(dataset_id, dataset_type, buffer_ptr, h5err, &
-         file_space_id = dataspace_id, mem_space_id = memspace_id, xfer_prp = file_id_plist)
-      call handle_hdf5_error(mpi_comm, 'h5dwrite_f', h5err)
-
-      ! Close open objects
-      call h5dclose_f(dataset_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5dclose_f', h5err)
-
-      call h5gclose_f(group_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5gclose_f', h5err)
-
-      call h5pclose_f(file_id_plist, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5pclose_f', h5err)
-
-      call h5sclose_f(dataspace_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5sclose_f', h5err)
-
-      call h5sclose_f(memspace_id, h5err)
-      call handle_hdf5_error(mpi_comm, 'h5sclose_f', h5err)
+      
+      if(append_local) then
+        ! Open the existing dataset and use its file dataspace.
+        call h5dopen_f(group_id, dataset, dataset_id, h5err)
+        call handle_hdf5_error(mpi_comm, 'h5dopen_f', h5err)
+        call h5dget_space_f(dataset_id, dataspace_id, h5err)
+        call handle_hdf5_error(mpi_comm, 'h5dget_space_f', h5err)
+      else
+        ! Create a fresh dataspace and dataset.
+        call h5screate_simple_f(rank, datasize, dataspace_id, h5err)
+        call handle_hdf5_error(mpi_comm, 'h5screate_simple_f', h5err)
+        call h5dcreate_f(group_id, dataset, dataset_type, dataspace_id, dataset_id, h5err)
+        call handle_hdf5_error(mpi_comm, 'h5dcreate', h5err)
+      end if
+    
+      ! Create memory space
+      call h5screate_simple_f(rank, memsize_use, memspace_id, h5err)
+      call handle_hdf5_error(mpi_comm, 'h5screate_simple_f', h5err)
+    
+      has_selection = .false.
+      do hsdx=1, size(hyperslabs)
+        if(any(hyperslabs(hsdx)%count == 0)) cycle
+      
+        if(hsdx==1) then
+          hs_operator = H5S_SELECT_SET_F
+        else
+          hs_operator = H5S_SELECT_OR_F ! Join hyperslabs
+        end if
+      
+        ! dataspace
+        call h5sselect_hyperslab_f(dataspace_id, hs_operator, hyperslabs(hsdx)%datastart, hyperslabs(hsdx)%count, h5err, &
+                        hyperslabs(hsdx)%stride, hyperslabs(hsdx)%datablock)
+        call handle_hdf5_error(mpi_comm, 'h5sselect_hyperslab_f:dataspace', h5err)
+      
+        ! memspace
+        call h5sselect_hyperslab_f(memspace_id, hs_operator, hyperslabs(hsdx)%memstart, hyperslabs(hsdx)%count, h5err, &
+                        hyperslabs(hsdx)%stride, hyperslabs(hsdx)%datablock)
+        call handle_hdf5_error(mpi_comm, 'h5sselect_hyperslab_f:memspace', h5err)
+        has_selection = .true.
+      end do
+    
+      if(.not. has_selection) then
+        call h5sselect_none_f(dataspace_id, h5err)
+        call handle_hdf5_error(mpi_comm, 'h5sselect_none_f:dataspace', h5err)
+        call h5sselect_none_f(memspace_id, h5err)
+        call handle_hdf5_error(mpi_comm, 'h5sselect_none_f:memspace', h5err)
+      end if
+    
+      ! Create a property list to enable parallel writing, if MPI is used.
+      call h5pcreate_f(H5P_DATASET_XFER_F, file_id_plist, h5err)
+      call handle_hdf5_error(mpi_comm, 'h5pcreate_f', h5err)
+    
+#ifdef MPI
+    if(.not. serial_access) then
+      call h5pset_dxpl_mpio_f(file_id_plist, H5FD_MPIO_COLLECTIVE_F, h5err)
+      call handle_hdf5_error(mpi_comm, 'h5pset_dxpl_mpio_f', h5err)
+    end if
 #endif
-   end subroutine hdf5_write_dataset
+
+    ! Write data to file
+    call h5dwrite_f(dataset_id, dataset_type, buffer_ptr, h5err, &
+                    file_space_id = dataspace_id, mem_space_id = memspace_id, xfer_prp = file_id_plist)
+    call handle_hdf5_error(mpi_comm, 'h5dwrite_f', h5err)
+
+    ! Close open objects
+    call h5dclose_f(dataset_id, h5err)
+    call handle_hdf5_error(mpi_comm, 'h5dclose_f', h5err)
+  
+    call h5gclose_f(group_id, h5err)
+    call handle_hdf5_error(mpi_comm, 'h5gclose_f', h5err)
+
+    call h5pclose_f(file_id_plist, h5err)
+    call handle_hdf5_error(mpi_comm, 'h5pclose_f', h5err)
+
+    call h5sclose_f(dataspace_id, h5err)
+    call handle_hdf5_error(mpi_comm, 'h5sclose_f', h5err)
+    
+    call h5sclose_f(memspace_id, h5err)
+    call handle_hdf5_error(mpi_comm, 'h5sclose_f', h5err)
+#endif    
+  end subroutine hdf5_write_dataset
 
 end module hdf5_write

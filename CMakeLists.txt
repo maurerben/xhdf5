@@ -74,6 +74,41 @@ endif()
 # Enable testing
 enable_testing()
 
+# Locate fypp (used to generate Fortran sources from .fypp templates)
+find_program(FYPP_EXECUTABLE NAMES fypp)
+
+if(NOT FYPP_EXECUTABLE)
+  find_package(Python3 QUIET COMPONENTS Interpreter)
+  if(Python3_Interpreter_FOUND)
+    execute_process(
+      COMMAND ${Python3_EXECUTABLE} -c "import fypp"
+      RESULT_VARIABLE FYPP_PYTHON_RESULT
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
+    if(FYPP_PYTHON_RESULT EQUAL 0)
+      set(FYPP_EXECUTABLE ${Python3_EXECUTABLE})
+      set(FYPP_COMMAND -m fypp)
+    endif()
+  endif()
+endif()
+
+if(NOT FYPP_EXECUTABLE)
+  message(FATAL_ERROR "fypp is required to build xhdf5. Install the 'fypp' executable or the Python module.")
+endif()
+
+# Generate a Fortran source file from a .fypp template.
+# Usage: fypp_generate(<input.fypp> <output.F90>)
+function(fypp_generate FYPP_INPUT FYPP_OUTPUT)
+  add_custom_command(
+    OUTPUT ${FYPP_OUTPUT}
+    COMMAND ${FYPP_EXECUTABLE} ${FYPP_COMMAND} ${FYPP_INPUT} ${FYPP_OUTPUT}
+    DEPENDS ${FYPP_INPUT}
+    COMMENT "Generating ${FYPP_OUTPUT} from fypp"
+    VERBATIM
+  )
+endfunction()
+
 # Find FORD for documentation generation (optional)
 find_program(FORD_EXECUTABLE ford)
 if(FORD_EXECUTABLE)

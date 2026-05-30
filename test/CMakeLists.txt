@@ -82,8 +82,12 @@ else()
 endif()
 
 
-# Unit tests for write/read numerical scalar routines
-add_executable(write_read_numerical_scalar src/write_read_numerical_scalar.F90)
+# Unit tests for write/read numerical scalar routines (generated from fypp template)
+fypp_generate(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/write_read_numerical_scalar.F90.fypp
+  ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_scalar.F90
+)
+add_executable(write_read_numerical_scalar ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_scalar.F90)
 target_link_libraries(write_read_numerical_scalar PRIVATE xhdf5)
 
 # Set include directories for tests
@@ -99,8 +103,12 @@ else()
 endif()
 
 
-# Unit tests for write/read numerical vector routines
-add_executable(write_read_numerical_vector src/write_read_numerical_vector.F90)
+# Unit tests for write/read numerical vector routines (generated from fypp template)
+fypp_generate(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/write_read_numerical_vector.F90.fypp
+  ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_vector.F90
+)
+add_executable(write_read_numerical_vector ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_vector.F90)
 target_link_libraries(write_read_numerical_vector PRIVATE xhdf5)
 
 # Set include directories for tests
@@ -116,8 +124,12 @@ else()
 endif()
 
 
-# Unit tests for write/read numerical matrix routines
-add_executable(write_read_numerical_matrix src/write_read_numerical_matrix.F90)
+# Unit tests for write/read numerical matrix routines (generated from fypp template)
+fypp_generate(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/write_read_numerical_matrix.F90.fypp
+  ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_matrix.F90
+)
+add_executable(write_read_numerical_matrix ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_matrix.F90)
 target_link_libraries(write_read_numerical_matrix PRIVATE xhdf5)
 
 # Set include directories for tests
