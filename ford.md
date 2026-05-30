@@ -1,10 +1,10 @@
 ---
-project: solhdf5
+project: xhdf5
 summary: Fortran HDF5 Utility Library with MPI Support
 author: Benedikt Maurer
 output_dir: ./doc
 exclude_dir: ./build*
-project_github: https://github.com/benediktmaurer/solhdf5
+project_github: https://github.com/benediktmaurer/xhdf5
 predocmark: >  
 docmark: !  
 display: public  
@@ -23,11 +23,11 @@ src_dir: ./src/
 
 ---
 
-# solhdf5 Documentation
+# xhdf5 Documentation
 
 ## Overview
 
-**solhdf5** is a modern Fortran library that provides easy-to-use, type-safe wrappers for HDF5 file operations with comprehensive MPI parallel I/O support. The library is designed to simplify HDF5 usage in scientific computing applications while maintaining high performance and flexibility.
+**xhdf5** is a modern Fortran library that provides easy-to-use, type-safe wrappers for HDF5 file operations with comprehensive MPI parallel I/O support. The library is designed to simplify HDF5 usage in scientific computing applications while maintaining high performance and flexibility.
 
 ## Key Features
 
@@ -66,7 +66,7 @@ src_dir: ./src/
 ### Basic Usage
 
 ```fortran
-use solhdf5
+use xhdf5
 
 type(h5file_t) :: h5file
 real(real64), allocatable :: buffer(:,:)
@@ -87,7 +87,7 @@ call h5file%delete()
 ### Parallel MPI Usage
 
 ```fortran
-use solhdf5
+use xhdf5
 use mpi_f08
 
 type(h5file_t) :: h5file
@@ -110,7 +110,7 @@ call h5file%delete()
 
 The library consists of several key modules:
 
-- **`solhdf5`**: Main user interface module with `h5file_t` type
+- **`xhdf5`**: Main user interface module with `h5file_t` type
 - **`hdf5_file`**: Low-level file operations (create/open/close)
 - **`hdf5_group`**: Group and link management
 - **`hdf5_dataset`**: Dataset creation and metadata
@@ -211,7 +211,7 @@ The documentation is generated in the `doc/` directory.
 
 ## Module Structure
 
-The main module `solhdf5` provides:
+The main module `xhdf5` provides:
 
 - `h5file_t` type for file handling
 - Generic interfaces for writing/reading different data types

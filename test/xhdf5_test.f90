@@ -1,20 +1,20 @@
-module solhdf5_test
+module xhdf5_test
    use iso_fortran_env, only: real32, real64
    use modmpi, only: mpiinfo, barrier, nofset, firstofset, lastofset
    use unit_test_framework, only : unit_test_type
-   use solhdf5
+   use xhdf5
    use os_utils, only: system_cmd
    use math_utils, only: mod1, all_close
 
    implicit none
 
    private
-   public :: solhdf5_test_driver
+   public :: xhdf5_test_driver
 
 contains
 
    !> Run tests for math tools
-   subroutine solhdf5_test_driver(mpiglobal, kill_on_failure)
+   subroutine xhdf5_test_driver(mpiglobal, kill_on_failure)
       !> mpi information
       type(mpiinfo), intent(in) :: mpiglobal
       !> Kill the program before the test driver finishes
@@ -31,65 +31,65 @@ contains
 
       ! Run and assert tests
 
-      call test_solhdf5_file(test_report, mpiglobal)
+      call test_xhdf5_file(test_report, mpiglobal)
       call barrier(mpiglobal)
 
       ! CHARACTER
 
-      call test_solhdf5_write_and_read_character(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_character(test_report, mpiglobal)
       call barrier(mpiglobal)
 
       ! INTEGER
 
-      call test_solhdf5_write_and_read_integer_rank_0(test_report, mpiglobal)
-      call test_solhdf5_write_and_read_integer_rank_1(test_report, mpiglobal)
-      call test_solhdf5_write_and_read_integer_rank_2(test_report, mpiglobal)
-      call test_solhdf5_write_and_read_integer_rank_3(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_integer_rank_0(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_integer_rank_1(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_integer_rank_2(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_integer_rank_3(test_report, mpiglobal)
 
       ! REAL(real32)
 
-      call test_solhdf5_write_and_read_real_real32_rank_0(test_report, mpiglobal)
-      call test_solhdf5_write_and_read_real_real32_rank_1(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real32_rank_0(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real32_rank_1(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real32_rank_2(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real32_rank_2(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real32_rank_3(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real32_rank_3(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real32_rank_4(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real32_rank_4(test_report, mpiglobal)
       call barrier(mpiglobal)
 
       ! REAL(real64)
 
-      call test_solhdf5_write_and_read_real_real64_rank_0(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real64_rank_0(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real64_rank_1(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real64_rank_1(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real64_rank_2(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real64_rank_2(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real64_rank_3(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real64_rank_3(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_real_real64_rank_4(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_real_real64_rank_4(test_report, mpiglobal)
       call barrier(mpiglobal)
 
       ! COMPLEX(real64)
 
-      call test_solhdf5_write_and_read_cmplx_real64_rank_1(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_cmplx_real64_rank_1(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_cmplx_real64_rank_2(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_cmplx_real64_rank_2(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_cmplx_real64_rank_3(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_cmplx_real64_rank_3(test_report, mpiglobal)
       call barrier(mpiglobal)
 
-      call test_solhdf5_write_and_read_cmplx_real64_rank_4(test_report, mpiglobal)
+      call test_xhdf5_write_and_read_cmplx_real64_rank_4(test_report, mpiglobal)
       call barrier(mpiglobal)
 #else
       print*, 'Built without HDF5. Nothing to do here.'
@@ -98,18 +98,18 @@ contains
 
       ! report results
       if (present(kill_on_failure)) then
-         call test_report%report('solhdf5', kill_on_failure)
+         call test_report%report('xhdf5', kill_on_failure)
       else
-         call test_report%report('solhdf5')
+         call test_report%report('xhdf5')
       end if
 
       ! Finalise test object
       call test_report%finalise()
-   end subroutine solhdf5_test_driver
+   end subroutine xhdf5_test_driver
 
 
    !> Test hdf5 file utilities
-   subroutine test_solhdf5_file(test_report, mpiglobal)
+   subroutine test_xhdf5_file(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -165,14 +165,14 @@ contains
       deallocate(dset_shape)
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_file
+   end subroutine test_xhdf5_file
 
 
 ! CHARACTER
 
 
    !> Test read and write character.
-   subroutine test_solhdf5_write_and_read_character(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_character(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -208,14 +208,14 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_character
+   end subroutine test_xhdf5_write_and_read_character
 
 
 ! INTEGER
 
 
    !> Test read and write for integer scalars.
-   subroutine test_solhdf5_write_and_read_integer_rank_0(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_integer_rank_0(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -238,11 +238,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_integer_rank_0
+   end subroutine test_xhdf5_write_and_read_integer_rank_0
 
 
    !> Test read and write for integer rank 1 arrays.
-   subroutine test_solhdf5_write_and_read_integer_rank_1(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_integer_rank_1(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -281,11 +281,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_integer_rank_1
+   end subroutine test_xhdf5_write_and_read_integer_rank_1
 
 
    !> Test read and write for integer rank 2 arrays.
-   subroutine test_solhdf5_write_and_read_integer_rank_2(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_integer_rank_2(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -345,11 +345,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_integer_rank_2
+   end subroutine test_xhdf5_write_and_read_integer_rank_2
 
 
    !> Test read and write for integer rank 3 arrays.
-   subroutine test_solhdf5_write_and_read_integer_rank_3(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_integer_rank_3(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -428,14 +428,14 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_integer_rank_3
+   end subroutine test_xhdf5_write_and_read_integer_rank_3
 
 
    ! REAL(real32)
 
 
    !> Test read and write for real(real32) scalars.
-   subroutine test_solhdf5_write_and_read_real_real32_rank_0(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real32_rank_0(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -458,11 +458,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real32_rank_0
+   end subroutine test_xhdf5_write_and_read_real_real32_rank_0
 
 
    !> Test read and write for real(real32) rank 1 arrays.
-   subroutine test_solhdf5_write_and_read_real_real32_rank_1(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real32_rank_1(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -502,11 +502,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real32_rank_1
+   end subroutine test_xhdf5_write_and_read_real_real32_rank_1
 
 
    !> Test read and write for real(real32) rank 2 arrays.
-   subroutine test_solhdf5_write_and_read_real_real32_rank_2(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real32_rank_2(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -566,11 +566,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real32_rank_2
+   end subroutine test_xhdf5_write_and_read_real_real32_rank_2
 
 
    !> Test read and write for real(real32) rank 3 arrays.
-   subroutine test_solhdf5_write_and_read_real_real32_rank_3(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real32_rank_3(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -649,11 +649,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real32_rank_3
+   end subroutine test_xhdf5_write_and_read_real_real32_rank_3
 
 
    !> Test read and write for real(real32) rank 4 arrays.
-   subroutine test_solhdf5_write_and_read_real_real32_rank_4(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real32_rank_4(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -749,14 +749,14 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real32_rank_4
+   end subroutine test_xhdf5_write_and_read_real_real32_rank_4
 
 
    ! REAL(real64)
 
 
    !> Test read and write for real(real64) scalars.
-   subroutine test_solhdf5_write_and_read_real_real64_rank_0(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real64_rank_0(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -779,11 +779,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real64_rank_0
+   end subroutine test_xhdf5_write_and_read_real_real64_rank_0
 
 
    !> Test read and write for real(real64) rank 1 arrays.
-   subroutine test_solhdf5_write_and_read_real_real64_rank_1(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real64_rank_1(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -823,11 +823,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real64_rank_1
+   end subroutine test_xhdf5_write_and_read_real_real64_rank_1
 
 
    !> Test read and write for real(real64) rank 2 arrays.
-   subroutine test_solhdf5_write_and_read_real_real64_rank_2(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real64_rank_2(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -887,11 +887,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real64_rank_2
+   end subroutine test_xhdf5_write_and_read_real_real64_rank_2
 
 
    !> Test read and write for real(real64) rank 3 arrays.
-   subroutine test_solhdf5_write_and_read_real_real64_rank_3(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real64_rank_3(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -970,11 +970,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real64_rank_3
+   end subroutine test_xhdf5_write_and_read_real_real64_rank_3
 
 
    !> Test read and write for real(real64) rank 4 arrays.
-   subroutine test_solhdf5_write_and_read_real_real64_rank_4(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_real_real64_rank_4(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -1070,14 +1070,14 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_real_real64_rank_4
+   end subroutine test_xhdf5_write_and_read_real_real64_rank_4
 
 
    ! COMPLEX(real64)
 
 
    !> Test read and write for complex(real64) rank 1 arrays.
-   subroutine test_solhdf5_write_and_read_cmplx_real64_rank_1(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_cmplx_real64_rank_1(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -1116,11 +1116,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_cmplx_real64_rank_1
+   end subroutine test_xhdf5_write_and_read_cmplx_real64_rank_1
 
 
    !> Test read and write for complex(real64) rank 2 arrays.
-   subroutine test_solhdf5_write_and_read_cmplx_real64_rank_2(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_cmplx_real64_rank_2(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -1180,11 +1180,11 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_cmplx_real64_rank_2
+   end subroutine test_xhdf5_write_and_read_cmplx_real64_rank_2
 
 
    !> Test read and write for complex(real64) rank 3 arrays.
-   subroutine test_solhdf5_write_and_read_cmplx_real64_rank_3(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_cmplx_real64_rank_3(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -1267,7 +1267,7 @@ contains
 
 
    !> Test read and write for complex(real64) rank 4 arrays.
-   subroutine test_solhdf5_write_and_read_cmplx_real64_rank_4(test_report, mpiglobal)
+   subroutine test_xhdf5_write_and_read_cmplx_real64_rank_4(test_report, mpiglobal)
       !> Our test object
       type(unit_test_type), intent(inout) :: test_report
       !> MPI communicator
@@ -1365,6 +1365,6 @@ contains
 
       call h5f%finalize()
       if(mpiglobal%is_root) ierr = system_cmd('rm test_file.h5')
-   end subroutine test_solhdf5_write_and_read_cmplx_real64_rank_4
+   end subroutine test_xhdf5_write_and_read_cmplx_real64_rank_4
 
 end module

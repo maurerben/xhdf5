@@ -4,7 +4,7 @@ program write_read_string_test
    use mpi_f08
 #endif
    use iso_fortran_env, only: output_unit
-   use solhdf5
+   use xhdf5
    use mpi_utils
 
    implicit none
@@ -22,7 +22,7 @@ program write_read_string_test
 #endif
 
    write(output_unit, '(a)') "=========================================="
-   write(output_unit, '(a)') "  solhdf5 Write/Read Unit Tests"
+   write(output_unit, '(a)') "  xhdf5 Write/Read Unit Tests"
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 

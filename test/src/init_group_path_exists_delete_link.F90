@@ -3,7 +3,7 @@ program init_group_path_exists_delete_link
    use mpi_f08
 #endif
    use iso_fortran_env, only: output_unit
-   use solhdf5
+   use xhdf5
    use os_utils, only: join_paths
 
    implicit none
@@ -28,7 +28,7 @@ program init_group_path_exists_delete_link
 #endif
 
    write(output_unit, '(a)') "=========================================="
-   write(output_unit, '(a)') "  solhdf5 Init/Delete Unit Tests"
+   write(output_unit, '(a)') "  xhdf5 Init/Delete Unit Tests"
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 

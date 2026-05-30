@@ -4,7 +4,7 @@ program minimal_hdf5_test
    use mpi_f08
 #endif
    use iso_fortran_env, only: output_unit
-   use solhdf5
+   use xhdf5
 
    implicit none
 

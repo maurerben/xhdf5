@@ -1,4 +1,4 @@
-!> Global definitions for the solhdf5 module
+!> Global definitions for the xhdf5 module
 module hdf5_globals
    use iso_fortran_env, only: int32
 

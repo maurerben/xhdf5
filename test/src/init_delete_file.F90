@@ -1,10 +1,10 @@
-!> Unit tests for solhdf5 init and delete routines
+!> Unit tests for xhdf5 init and delete routines
 program init_delete_file
 #ifdef MPI
    use mpi_f08
 #endif
    use iso_fortran_env, only: output_unit
-   use solhdf5
+   use xhdf5
    use os_utils, only: join_paths
 
    implicit none
@@ -24,7 +24,7 @@ program init_delete_file
 #endif
 
    write(output_unit, '(a)') "=========================================="
-   write(output_unit, '(a)') "  solhdf5 Init/Delete Unit Tests"
+   write(output_unit, '(a)') "  xhdf5 Init/Delete Unit Tests"
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 

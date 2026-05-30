@@ -1,4 +1,4 @@
-!> Error handling for solhdf5.
+!> Error handling for xhdf5.
 module error_handling
 
    use mpi_utils, only: terminate, mpi_comm_type

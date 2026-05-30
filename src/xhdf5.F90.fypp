@@ -15,7 +15,7 @@
 !> For examples how to use the library we refer kindly to the unit tests in `test/src`.
 !>
 !> Be aware of that the writing routines will overwrite an existing data set with the same name.
-module solhdf5
+module xhdf5
 #ifdef MPI
    use mpi_f08, only: MPI_Comm
 #endif
@@ -53,6 +53,14 @@ module solhdf5
    logical, parameter :: warn_overwrite = .false.
 #endif
 
+#:set numeric_types = [ &
+('integer_int32', 'integer(int32)', 'hdf5_integer_int32()', '.false.'), &
+('real_real32', 'real(real32)', 'hdf5_float()', '.false.'), &
+('real_real64', 'real(real64)', 'hdf5_double()', '.false.'), &
+('complex_real32', 'complex(real32)', 'hdf5_float()', '.true.'), &
+('complex_real64', 'complex(real64)', 'hdf5_double()', '.true.') &
+]
+
 
    !> Type for handeling an HDF5 file.
    type h5file_t
@@ -83,23 +91,19 @@ module solhdf5
          write => &
          write_string, &
          write_bool, &
-         write_integer_int32, &
-         write_real_real32, &
-         write_real_real64, &
-         write_complex_real32, &
-         write_complex_real64
+#:for idx, item in enumerate(numeric_types)
+         write_${item[0]}$ #{if idx < len(numeric_types) - 1}#, & #{endif}#
+#:endfor
 
-      generic :: &
+         generic :: &
          read => &
          read_string, &
-         read_bool, &
-         read_integer_int32, &
-         read_real_real32, &
-         read_real_real64, &
-         read_complex_real32, &
-         read_complex_real64
+         read_bool &
+#:for idx, item in enumerate(numeric_types)
+         read_${item[0]}$ #{if idx < len(numeric_types) - 1}#, & #{endif}#
+#:endfor
 
-      procedure :: &
+         procedure :: &
          initialize_mpi_comm_type, &
          initialize_mpi_comm_int, &
 #ifdef MPI
@@ -117,19 +121,13 @@ module solhdf5
          evaluate_overwritten_datasets, &
          link_points_to_group, &
          write_string, &
-         write_bool, &
-         write_integer_int32, &
-         write_real_real32, &
-         write_real_real64, &
-         write_complex_real32, &
-         write_complex_real64, &
          read_string, &
+         write_bool, &
          read_bool, &
-         read_integer_int32, &
-         read_real_real32, &
-         read_real_real64, &
-         read_complex_real32, &
-         read_complex_real64
+#:for idx, item in enumerate(numeric_types)
+         write_${item[0]}$, &
+         read_${item[0]}$ #{if idx < len(numeric_types) - 1}#, & #{endif}#
+#:endfor
    end type h5file_t
 
 
@@ -145,7 +143,7 @@ contains
       !> MPI communicator.
       type(mpi_comm_type), intent(in) :: mpi_comm
       !> Set to `.true.` for serial access in an MPI environment.
-      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
+      !> With this setting enabled, only the root process is allowed to call xhdf5 routines.
       logical, intent(in), optional :: serial_access
       !> Set to `.true.` if parent directories should be created if they do not exist.
       logical, intent(in), optional :: make_parents
@@ -167,8 +165,8 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%initialize_mpi_comm_type): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%initialize_mpi_comm_type): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       call hdf5_initialize(this%mpi_comm)
@@ -190,7 +188,7 @@ contains
       !> MPI integer communicator
       integer, intent(in) :: mpi_comm_int
       !> Set to `.true.` for serial access in an MPI environment.
-      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
+      !> With this setting enabled, only the root process is allowed to call xhdf5 routines.
       logical, intent(in), optional :: serial_access
       !> Set to `.true.` if parent directories should be created if they do not exist.
       logical, intent(in), optional :: make_parents
@@ -228,7 +226,7 @@ contains
       !> MPI communicator from mpi_f08.
       type(MPI_Comm), intent(in) :: mpi_comm_f08
       !> Set to `.true.` for serial access in an MPI environment.
-      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
+      !> With this setting enabled, only the root process is allowed to call xhdf5 routines.
       logical, intent(in), optional :: serial_access
       !> Set to `.true.` if parent directories should be created if they do not exist.
       logical, intent(in), optional :: make_parents
@@ -263,7 +261,7 @@ contains
       !> Relative path to HDF5 file.
       character(*), intent(in) :: path
       !> Set to `.true.` for serial access in an MPI environment.
-      !> With this setting enabled, only the root process is allowed to call solhdf5 routines.
+      !> With this setting enabled, only the root process is allowed to call xhdf5 routines.
       logical, intent(in), optional :: serial_access
       !> Set to `.true.` if parent directories should be created if they do not exist.
       logical, intent(in), optional :: make_parents
@@ -332,18 +330,18 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%init_group): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%init_group): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       if (this%link_exists(join_paths(h5path, groupname))) then
          ! If a link with the same name as the group to create already exists, check that it points to a group. If not, raise an error.
          call assert_true(this%link_points_to_group(join_paths(h5path, groupname)), &
-            'Error(solhdf5%init_group): a link with the same name as the group to create already exists but does not point to a group.')
+            'Error(xhdf5%init_group): a link with the same name as the group to create already exists but does not point to a group.')
       else if (this%link_exists(h5path)) then
          ! If the group path already exists but does not point to a group, raise an error. If it points to a group, create the new group in this group.
          call assert_true(this%link_points_to_group(h5path), &
-            'Error(solhdf5%init_group): a link with the same name as the group path already exists but does not point to a group.')
+            'Error(xhdf5%init_group): a link with the same name as the group path already exists but does not point to a group.')
          call hdf5_create_group(this%mpi_comm, this%file_id, h5path, groupname)
       else
          ! If the group path does not exist, create the parent group and then create the new group in it.
@@ -362,8 +360,8 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%link_points_to_group): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%link_points_to_group): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       call hdf5_link_points_to_group(this%mpi_comm, this%file_id, trim(h5path), link_points_to_group)
@@ -392,8 +390,8 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%link_exists): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%link_exists): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       link_exists = hdf5_link_exists(this%mpi_comm, this%file_id, trim(h5path))
@@ -408,8 +406,8 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%delete_link): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%delete_link): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       call hdf5_delete_link(this%mpi_comm, this%file_id, trim(h5path))
@@ -435,8 +433,8 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%dataset_shape): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%dataset_shape): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       complex_dataset_local = .false.
@@ -458,7 +456,7 @@ contains
 
       if(warn_overwrite .and. this%n_overwritten_datasets > 0) then
          write(error_unit, '(1x, A, I3, A, A, A)') &
-            "Warning(solhdf5): ", this%n_overwritten_datasets, " dataset(s) were overwritten in file ", this%path, "."
+            "Warning(xhdf5): ", this%n_overwritten_datasets, " dataset(s) were overwritten in file ", this%path, "."
       end if
    end subroutine evaluate_overwritten_datasets
 
@@ -479,7 +477,7 @@ contains
          call this%delete_link(join_paths(h5path, datasetname))
          if(warn_overwrite) then
             write(error_unit, '(1x, A, A, A)') &
-               "Warning(solhdf5): Dataset ", datasetname, " already existed and was deleted. &
+               "Warning(xhdf5): Dataset ", datasetname, " already existed and was deleted. &
                It will be overwritten with new data."
          end if
       else
@@ -506,8 +504,8 @@ contains
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%write_string): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%write_string): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       call hyperslab%init([1], [-1], [-1], [-1], [-1], [-1], [-1], .false.)
@@ -570,15 +568,15 @@ contains
       type(hyperslab_type) :: hyperslab
 
       call assert_true(this%is_open(), &
-         'Error(solhdf5%read_string): HDF5 file is not initialized.')
+         'Error(xhdf5%read_string): HDF5 file is not initialized.')
 
       call assert_true(this%link_exists(join_paths(h5path, dataset)), &
-         'Error(solhdf5%read_string): dataset does not exist.')
+         'Error(xhdf5%read_string): dataset does not exist.')
 
       if(this%serial_access) then
          call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
-            'Error(solhdf5%read_string): serial_access is set to .true., only the root process &
-            is allowed to call solhdf5 routines.')
+            'Error(xhdf5%read_string): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
       end if
 
       dataset_type = hdf5_get_type(this%mpi_comm, this%file_id, h5path, dataset)
@@ -623,88 +621,90 @@ contains
    end subroutine read_bool
 
    ! Numerical interfaces
+#:for suffix, ft_type, h5type_expr, complex_flag in numeric_types
 
-   ! ---- integer(int32)
-#define FT_TYPE        integer(int32)
-#define h5fYPE_EXPR() hdf5_integer_int32()
-#define COMPLEX_FLAG   .false.
+   ! ---- ${ft_type}$
+   subroutine write_${suffix}$(this, h5path, dataset, buffer, datastart, datasize, hyperslabs)
+      class(h5file_t), intent(inout) :: this
+      character(*), intent(in) :: h5path
+      character(*), intent(in) :: dataset
+      ${ft_type}$, intent(in), contiguous, target :: buffer(..)
+      integer(int32), intent(in), optional :: datastart(:)
+      integer(int32), intent(in), optional :: datasize(:)
+      type(hyperslab_type), intent(in), optional :: hyperslabs(:)
 
-#define PROCNAME       write_integer_int32
-#include "templates/write_numeric.inc"
-#undef PROCNAME
-#define PROCNAME       read_integer_int32
-#include "templates/read_numeric.inc"
-#undef PROCNAME
+      integer(int32), allocatable :: datasize_local(:), datastart_local(:)
+      type(hyperslab_type), allocatable :: hyperslabs_use(:)
+      type(c_ptr) :: buffer_ptr
+      ${ft_type}$, target :: dummy_buffer
 
-#undef FT_TYPE
-#undef h5fYPE_EXPR
-#undef COMPLEX_FLAG
+      if(this%serial_access) then
+         call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
+            'Error(xhdf5%write): serial_access is set to .true., only the root process &
+            is allowed to call xhdf5 routines.')
+      end if
 
-! ---- real(real32)
-#define FT_TYPE        real(real32)
-#define h5fYPE_EXPR() hdf5_float()
-#define COMPLEX_FLAG   .false.
+      if(present(hyperslabs)) then
+         hyperslabs_use = hyperslabs
+      else
+         datastart_local = [int32_undefined]
+         if (present(datastart)) datastart_local = datastart
+         datasize_local = [int32_undefined]
+         if (present(datasize)) datasize_local = datasize
+         allocate(hyperslabs_use(1))
+         call hyperslabs_use(1)%init(shape(buffer, kind=int32), datasize_local, [-1], datastart_local, [-1], [-1], [-1], ${complex_flag}$)
+      endif
 
-#define PROCNAME       write_real_real32
-#include "templates/write_numeric.inc"
-#undef PROCNAME
-#define PROCNAME       read_real_real32
-#include "templates/read_numeric.inc"
-#undef PROCNAME
+      call this%handle_if_dataset_exists(h5path, dataset)
+      if(product(shape(buffer, kind=int32)) == 0) then
+         buffer_ptr = c_loc(dummy_buffer)
+      else
+         buffer_ptr = c_loc(buffer)
+      end if
+      call hdf5_write_dataset(this%mpi_comm, this%file_id, h5path, dataset, ${h5type_expr}$, buffer_ptr, &
+         hyperslabs_use, this%serial_access)
+      end subroutine write_${suffix}$
 
-#undef FT_TYPE
-#undef h5fYPE_EXPR
-#undef COMPLEX_FLAG
+      subroutine read_${suffix}$(this, h5path, dataset, buffer, datastart, hyperslabs)
+         class(h5file_t), intent(inout) :: this
+         character(*), intent(in) :: h5path
+         character(*), intent(in) :: dataset
+         ${ft_type}$, intent(inout), contiguous, target :: buffer(..)
+         integer(int32), intent(in), optional :: datastart(:)
+         type(hyperslab_type), intent(in), optional :: hyperslabs(:)
 
-! ---- real(real64)
-#define FT_TYPE        real(real64)
-#define h5fYPE_EXPR() hdf5_double()
-#define COMPLEX_FLAG   .false.
+         integer(int32), allocatable :: datasize_file(:), datastart_local(:)
+         type(c_ptr) :: buffer_ptr
+         type(hyperslab_type), allocatable :: hyperslabs_use(:)
+         ${ft_type}$, target :: dummy_buffer
 
-#define PROCNAME       write_real_real64
-#include "templates/write_numeric.inc"
-#undef PROCNAME
+         if(this%serial_access) then
+            call assert_true(comm_to_rank(this%mpi_comm) == root_rank, &
+               'Error(xhdf5%read): serial_access is set to .true., only the root process &
+               is allowed to call xhdf5 routines.')
+         end if
 
-#define PROCNAME       read_real_real64
-#include "templates/read_numeric.inc"
-#undef PROCNAME
+         call this%dataset_shape(h5path, dataset, datasize_file, ${complex_flag}$)
+         if(present(hyperslabs)) then
+            hyperslabs_use = hyperslabs
+            call assert_true(hyperslabs(1)%check_datasize(datasize_file), &
+               'Error(xhdf5%read): hyperslabs have not the same size as dataset ' // h5path // '/' // dataset // '.' )
+         else
+            datastart_local = [int32_undefined]
+            if (present(datastart)) datastart_local = datastart
 
-#undef FT_TYPE
-#undef h5fYPE_EXPR
-#undef COMPLEX_FLAG
+            allocate(hyperslabs_use(1))
+            call hyperslabs_use(1)%init(shape(buffer, kind=int32), datasize_file, [-1], datastart_local, [-1], [-1], [-1], ${complex_flag}$)
+         endif
 
-! ---- complex(real32)
-#define FT_TYPE        complex(real32)
-#define h5fYPE_EXPR() hdf5_float()
-#define COMPLEX_FLAG   .true.
+         if(product(shape(buffer, kind=int32)) == 0) then
+            buffer_ptr = c_loc(dummy_buffer)
+         else
+            buffer_ptr = c_loc(buffer)
+         end if
+         call hdf5_read_dataset(this%mpi_comm, this%file_id, h5path, dataset, ${h5type_expr}$, buffer_ptr, &
+            hyperslabs_use, this%serial_access)
+         end subroutine read_${suffix}$
+#:endfor
 
-#define PROCNAME       write_complex_real32
-#include "templates/write_numeric.inc"
-#undef PROCNAME
-
-#define PROCNAME       read_complex_real32
-#include "templates/read_numeric.inc"
-#undef PROCNAME
-
-#undef FT_TYPE
-#undef h5fYPE_EXPR
-#undef COMPLEX_FLAG
-
-! ---- complex(real64)
-#define FT_TYPE        complex(real64)
-#define h5fYPE_EXPR() hdf5_double()
-#define COMPLEX_FLAG   .true.
-
-#define PROCNAME       write_complex_real64
-#include "templates/write_numeric.inc"
-#undef PROCNAME
-
-#define PROCNAME       read_complex_real64
-#include "templates/read_numeric.inc"
-#undef PROCNAME
-
-#undef FT_TYPE
-#undef h5fYPE_EXPR
-#undef COMPLEX_FLAG
-
-end module solhdf5
+      end module xhdf5

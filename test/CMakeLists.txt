@@ -16,7 +16,7 @@ endif()
 
 # Minimal test executable
 add_executable(minimal_hdf5_test src/minimal_test.F90)
-target_link_libraries(minimal_hdf5_test PRIVATE solhdf5)
+target_link_libraries(minimal_hdf5_test PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(minimal_hdf5_test PRIVATE
@@ -33,7 +33,7 @@ endif()
 
 # Unit tests for init/delete file routines
 add_executable(init_delete_file src/init_delete_file.F90)
-target_link_libraries(init_delete_file PRIVATE solhdf5)
+target_link_libraries(init_delete_file PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(init_delete_file PRIVATE
@@ -50,7 +50,7 @@ endif()
 
 # Unit tests for initialize/finalize routines
 add_executable(init_group_path_exists_delete_link src/init_group_path_exists_delete_link.F90)
-target_link_libraries(init_group_path_exists_delete_link PRIVATE solhdf5)
+target_link_libraries(init_group_path_exists_delete_link PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(init_group_path_exists_delete_link PRIVATE
@@ -67,7 +67,7 @@ endif()
 
 # Unit tests for write/read data routines (strings and booleans)
 add_executable(write_read_data src/write_read_data.F90)
-target_link_libraries(write_read_data PRIVATE solhdf5)
+target_link_libraries(write_read_data PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(write_read_data PRIVATE
@@ -84,7 +84,7 @@ endif()
 
 # Unit tests for write/read numerical scalar routines
 add_executable(write_read_numerical_scalar src/write_read_numerical_scalar.F90)
-target_link_libraries(write_read_numerical_scalar PRIVATE solhdf5)
+target_link_libraries(write_read_numerical_scalar PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(write_read_numerical_scalar PRIVATE
@@ -101,7 +101,7 @@ endif()
 
 # Unit tests for write/read numerical vector routines
 add_executable(write_read_numerical_vector src/write_read_numerical_vector.F90)
-target_link_libraries(write_read_numerical_vector PRIVATE solhdf5)
+target_link_libraries(write_read_numerical_vector PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(write_read_numerical_vector PRIVATE
@@ -118,7 +118,7 @@ endif()
 
 # Unit tests for write/read numerical matrix routines
 add_executable(write_read_numerical_matrix src/write_read_numerical_matrix.F90)
-target_link_libraries(write_read_numerical_matrix PRIVATE solhdf5)
+target_link_libraries(write_read_numerical_matrix PRIVATE xhdf5)
 
 # Set include directories for tests
 target_include_directories(write_read_numerical_matrix PRIVATE

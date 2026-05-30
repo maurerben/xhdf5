@@ -87,7 +87,7 @@ contains
       integer(hdf5_id) :: group_id, dataset_id, file_id_dtype
 
       call assert_true(file_id /= file_id_undefined, &
-         'Error(solhdf5%write): HDF5 file is not initialized.')
+         'Error(xhdf5%write): HDF5 file is not initialized.')
 
       call h5gopen_f(file_id, h5path, group_id, h5err)
       call handle_hdf5_error(mpi_comm, 'h5gopen_f' ,h5err)

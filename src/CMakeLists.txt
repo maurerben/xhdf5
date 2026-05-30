@@ -1,34 +1,69 @@
 # Automatically find all Fortran source files
-file(GLOB_RECURSE SOLHDF5_SOURCES
+file(GLOB_RECURSE xhdf5_SOURCES
   "*.F90"
   "*.f90"
 )
 
+find_program(FYPP_EXECUTABLE NAMES fypp)
+
+if(NOT FYPP_EXECUTABLE)
+  find_package(Python3 QUIET COMPONENTS Interpreter)
+  if(Python3_Interpreter_FOUND)
+    execute_process(
+      COMMAND ${Python3_EXECUTABLE} -c "import fypp"
+      RESULT_VARIABLE FYPP_PYTHON_RESULT
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
+    if(FYPP_PYTHON_RESULT EQUAL 0)
+      set(FYPP_EXECUTABLE ${Python3_EXECUTABLE})
+      set(FYPP_COMMAND -m fypp)
+    endif()
+  endif()
+endif()
+
+if(NOT FYPP_EXECUTABLE)
+  message(FATAL_ERROR "fypp is required to build xhdf5. Install the 'fypp' executable or the Python module.")
+endif()
+
+set(xhdf5_FYPP_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/xhdf5.F90.fypp")
+set(xhdf5_GENERATED_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/xhdf5.F90")
+
+add_custom_command(
+  OUTPUT ${xhdf5_GENERATED_SOURCE}
+  COMMAND ${FYPP_EXECUTABLE} ${FYPP_COMMAND} ${xhdf5_FYPP_SOURCE} ${xhdf5_GENERATED_SOURCE}
+  DEPENDS ${xhdf5_FYPP_SOURCE}
+  COMMENT "Generating xhdf5.F90 from fypp"
+  VERBATIM
+)
+
+list(APPEND xhdf5_SOURCES ${xhdf5_GENERATED_SOURCE})
+
 # Create the library
-add_library(solhdf5 STATIC ${SOLHDF5_SOURCES})
+add_library(xhdf5 STATIC ${xhdf5_SOURCES})
 
 # Set module output directory
-set_target_properties(solhdf5 PROPERTIES
+set_target_properties(xhdf5 PROPERTIES
   Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules"
 )
 
 # Enable automatic Fortran module dependency scanning
-set_target_properties(solhdf5 PROPERTIES
+set_target_properties(xhdf5 PROPERTIES
   Fortran_PREPROCESS ON
 )
 
 # Link against HDF5 if it was found
 if(HDF5_FOUND)
-  target_link_libraries(solhdf5 PUBLIC ${HDF5_LIBS})
-  target_include_directories(solhdf5 PUBLIC ${HDF5_Fortran_INCLUDE_DIRS})
+  target_link_libraries(xhdf5 PUBLIC ${HDF5_LIBS})
+  target_include_directories(xhdf5 PUBLIC ${HDF5_Fortran_INCLUDE_DIRS})
 endif()
 
 # Link against MPI if it was found
 if(MPI_FOUND)
-  target_link_libraries(solhdf5 PUBLIC MPI::MPI_Fortran)
+  target_link_libraries(xhdf5 PUBLIC MPI::MPI_Fortran)
 endif()
 
 # Expose modules directory for other targets
-target_include_directories(solhdf5 PUBLIC
+target_include_directories(xhdf5 PUBLIC
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/modules>
 )

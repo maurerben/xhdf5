@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(solhdf5 Fortran)
+project(xhdf5 Fortran)
 
 # Set Fortran standard
 set(CMAKE_Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules")

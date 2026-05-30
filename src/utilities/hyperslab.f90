@@ -1,6 +1,6 @@
 !> Utilities for describing and validating HDF5 hyperslab selections.
 !>
-!> The module provides [`hyperslab_type`](/home/benediktmaurer/Codes/exciting/optixciting/src/solhdf5/utilities/hyperslab.f90)
+!> The module provides [`hyperslab_type`](/home/benediktmaurer/Codes/exciting/optixciting/src/xhdf5/utilities/hyperslab.f90)
 !> as a compact representation of the file-space and memory-space selections used by
 !> the HDF5 read and write wrappers. It also offers validation helpers to ensure that
 !> those selections are internally consistent before any HDF5 operation is attempted.
@@ -177,64 +177,64 @@ contains
       integer(hdf5_size), allocatable :: file_last_exclusive(:), mem_last_exclusive(:)
 
       call assert_true(size(this) > 0, &
-         'Error(solhdf5: '// calling_routine //'): hyperslab array is empty.')
+         'Error(xhdf5: '// calling_routine //'): hyperslab array is empty.')
 
       do hsdx=1, size(this)
 
          call assert_true(this(hsdx)%rank /= uninitialized_rank, &
-            'Error(solhdf5: '// calling_routine //'): hyperslab is not initialized.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab is not initialized.')
 
          call assert_true(allocated(this(hsdx)%count), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab count is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab count is not allocated.')
          call assert_true(allocated(this(hsdx)%datasize), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab datasize is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab datasize is not allocated.')
          call assert_true(allocated(this(hsdx)%memsize), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab memsize is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab memsize is not allocated.')
          call assert_true(allocated(this(hsdx)%datastart), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab datastart is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab datastart is not allocated.')
          call assert_true(allocated(this(hsdx)%memstart), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab memstart is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab memstart is not allocated.')
          call assert_true(allocated(this(hsdx)%stride), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab stride is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab stride is not allocated.')
          call assert_true(allocated(this(hsdx)%datablock), &
-            'Error(solhdf5: '// calling_routine //'): hyperslab datablock is not allocated.')
+            'Error(xhdf5: '// calling_routine //'): hyperslab datablock is not allocated.')
 
          call assert_true(size(this(hsdx)%count) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(count) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(count) /= rank.')
          call assert_true(size(this(hsdx)%datasize) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(datasize) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(datasize) /= rank.')
          call assert_true(size(this(hsdx)%memsize) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(memsize) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(memsize) /= rank.')
          call assert_true(size(this(hsdx)%datastart) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(datastart) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(datastart) /= rank.')
          call assert_true(size(this(hsdx)%memstart) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(memstart) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(memstart) /= rank.')
          call assert_true(size(this(hsdx)%stride) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(stride) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(stride) /= rank.')
          call assert_true(size(this(hsdx)%datablock) == this(hsdx)%rank, &
-            'Error(solhdf5: '// calling_routine //'): size(datablock) /= rank.')
+            'Error(xhdf5: '// calling_routine //'): size(datablock) /= rank.')
 
          call assert_true(this(hsdx)%rank == this(1)%rank, &
-            'Error(solhdf5: '// calling_routine //'): hyperslabs have inconsistent rank.')
+            'Error(xhdf5: '// calling_routine //'): hyperslabs have inconsistent rank.')
          call assert_true(all(this(hsdx)%datasize == this(1)%datasize), &
-            'Error(solhdf5: '// calling_routine //'): hyperslabs have inconsistent datasize.')
+            'Error(xhdf5: '// calling_routine //'): hyperslabs have inconsistent datasize.')
          call assert_true(all(this(hsdx)%memsize == this(1)%memsize), &
-            'Error(solhdf5: '// calling_routine //'): hyperslabs have inconsistent memsize.')
+            'Error(xhdf5: '// calling_routine //'): hyperslabs have inconsistent memsize.')
 
          call assert_true(all(this(hsdx)%datasize > 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of datasize <= 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of datasize <= 0.')
          call assert_true(all(this(hsdx)%memsize >= 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of memsize < 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of memsize < 0.')
          call assert_true(all(this(hsdx)%count >= 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of count < 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of count < 0.')
          call assert_true(all(this(hsdx)%stride > 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of stride <= 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of stride <= 0.')
          call assert_true(all(this(hsdx)%datablock > 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of datablock <= 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of datablock <= 0.')
          call assert_true(all(this(hsdx)%datastart >= 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of datastart < 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of datastart < 0.')
          call assert_true(all(this(hsdx)%memstart >= 0), &
-            'Error(solhdf5: '// calling_routine //'): Some elements of memstart < 0.')
+            'Error(xhdf5: '// calling_routine //'): Some elements of memstart < 0.')
 
          ! Hyperslab bound: start + (count - 1) * stride + datablock <= extent.
          if(all(this(hsdx)%count > 0)) then
@@ -242,9 +242,9 @@ contains
             mem_last_exclusive = this(hsdx)%memstart + (this(hsdx)%count - 1) * this(hsdx)%stride + this(hsdx)%datablock
 
             call assert_true(all(file_last_exclusive <= this(hsdx)%datasize), &
-               'Error(solhdf5: '// calling_routine //'): hyperslab exceeds datasize.')
+               'Error(xhdf5: '// calling_routine //'): hyperslab exceeds datasize.')
             call assert_true(all(mem_last_exclusive <= this(hsdx)%memsize), &
-               'Error(solhdf5: '// calling_routine //'): hyperslab exceeds memsize.')
+               'Error(xhdf5: '// calling_routine //'): hyperslab exceeds memsize.')
          end if
       end do
    end subroutine check_hyperslabs

@@ -1,6 +1,6 @@
-# solhdf5
+# xhdf5
 
-`solhdf5` is a Fortran HDF5 utility library with MPI-aware test coverage. It provides wrappers and utilities for easier HDF5 file, group, dataset, and datatype handling in Fortran.
+`xhdf5` is a Fortran HDF5 utility library with MPI-aware test coverage. It provides wrappers and utilities for easier HDF5 file, group, dataset, and datatype handling in Fortran.
 
 ## Repository layout
 
@@ -79,7 +79,7 @@
 ### Basic Usage
 
 ```fortran
-use solhdf5
+use xhdf5
 
 type(h5file_t) :: h5file
 real(real64), allocatable :: buffer(:,:)
@@ -100,7 +100,7 @@ call h5file%delete()
 ### Parallel MPI Usage
 
 ```fortran
-use solhdf5
+use xhdf5
 use mpi_f08
 
 type(h5file_t) :: h5file
