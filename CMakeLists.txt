@@ -74,10 +74,28 @@ endif()
 # Enable testing
 enable_testing()
 
-# Locate fypp (used to generate Fortran sources from .fypp templates)
-find_program(FYPP_EXECUTABLE NAMES fypp)
+# Locate fypp, used to generate Fortran sources from .fypp templates.
+#
+# Resolution order (first match wins):
+#   1. An explicit fypp passed via -DFYPP_EXECUTABLE=/path/to/fypp
+#      (also the way to use a vendored script shipped in the source tree)
+#   2. A locally installed `fypp` executable on PATH
+#   3. The `fypp` Python module (`python3 -m fypp`)
+set(FYPP_COMMAND "")
+
+if(FYPP_EXECUTABLE)
+  # 1. Explicit user override (e.g. a vendored script) - used as-is.
+  message(STATUS "Using user-provided fypp: ${FYPP_EXECUTABLE}")
+else()
+  # 2. Locally installed fypp executable.
+  find_program(FYPP_EXECUTABLE NAMES fypp)
+  if(FYPP_EXECUTABLE)
+    message(STATUS "Using installed fypp: ${FYPP_EXECUTABLE}")
+  endif()
+endif()
 
 if(NOT FYPP_EXECUTABLE)
+  # 3. fypp provided as a Python module.
   find_package(Python3 QUIET COMPONENTS Interpreter)
   if(Python3_Interpreter_FOUND)
     execute_process(
@@ -89,12 +107,14 @@ if(NOT FYPP_EXECUTABLE)
     if(FYPP_PYTHON_RESULT EQUAL 0)
       set(FYPP_EXECUTABLE ${Python3_EXECUTABLE})
       set(FYPP_COMMAND -m fypp)
+      message(STATUS "Using fypp Python module: ${Python3_EXECUTABLE} -m fypp")
     endif()
   endif()
 endif()
 
 if(NOT FYPP_EXECUTABLE)
-  message(FATAL_ERROR "fypp is required to build xhdf5. Install the 'fypp' executable or the Python module.")
+  message(FATAL_ERROR "fypp is required to build xhdf5. Install the 'fypp' executable or "
+    "Python module, or point -DFYPP_EXECUTABLE=... at a vendored script.")
 endif()
 
 # Generate a Fortran source file from a .fypp template.
