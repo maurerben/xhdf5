@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 program init_group_path_exists_delete_link
 #ifdef MPI
    use mpi_f08

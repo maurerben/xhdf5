@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Wrapper for reading any data set from an HDF5 file
 module hdf5_read
    use iso_c_binding, only: c_ptr

@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 module xhdf5_test
    use iso_fortran_env, only: real32, real64
    use modmpi, only: mpiinfo, barrier, nofset, firstofset, lastofset

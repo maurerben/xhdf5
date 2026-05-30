@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Utilities for describing and validating HDF5 hyperslab selections.
 !>
 !> The module provides [`hyperslab_type`](/home/benediktmaurer/Codes/exciting/optixciting/src/xhdf5/utilities/hyperslab.f90)

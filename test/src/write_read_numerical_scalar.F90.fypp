@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Unit tests for write and read numerical scalar routines
 
 #! List of numeric types to generate tests for.
@@ -112,115 +115,118 @@ contains
       end if
 
       write(output_unit, *)
-   end subroutine test_write_read_${suffix}$_scalar
+      end subroutine test_write_read_${suffix}$_scalar
 
-   ! Test for ${type_label}$ scalar - serial mode
-   subroutine test_write_read_${suffix}$_scalar_serial()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ scalar (serial mode)"
-      character(*), parameter :: filename = "test_${suffix}$_serial.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_scalar"
-      ${type_label}$ :: test_value = ${init_value}$
-      ${type_label}$ :: read_value
+      ! Test for ${type_label}$ scalar - serial mode
+      subroutine test_write_read_${suffix}$_scalar_serial()
+         type(h5file_t) :: h5file
+         character(*), parameter :: test_name = "Test: Write and read ${type_label}$ scalar (serial mode)"
+         character(*), parameter :: filename = "test_${suffix}$_serial.h5"
+         character(*), parameter :: h5path = "/"
+         character(*), parameter :: dataset = "test_scalar"
+         ${type_label}$ :: test_value = ${init_value}$
+         ${type_label}$ :: read_value
 
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+         num_tests = num_tests + 1
+         write(output_unit, '(a)') test_name
 
-      ! Initialize MPI communicator first to check rank
-      call init_with_mpi_comm_world(h5file%mpi_comm)
+         ! Initialize MPI communicator first to check rank
+         call init_with_mpi_comm_world(h5file%mpi_comm)
 
-      ! Only root process performs serial HDF5 operations
-      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
-         ! Init file in serial mode (only root process allowed)
-         call h5file%init(filename, serial_access=.true.)
+         ! Only root process performs serial HDF5 operations
+         if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+            ! Init file in serial mode (only root process allowed)
+            call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%is_open()) then
-            ! Write scalar
-            call h5file%write(h5path, dataset, test_value)
-            write(output_unit, '(a)') "    Scalar written successfully"
+            if (h5file%is_open()) then
+               ! Write scalar
+               call h5file%write(h5path, dataset, test_value)
+               write(output_unit, '(a)') "    Scalar written successfully"
 
-            ! Read scalar back
-            call h5file%read(h5path, dataset, read_value)
+               ! Read scalar back
+               call h5file%read(h5path, dataset, read_value)
 
-            ! Check if values match
-            if (read_value == test_value) then
-               write(output_unit, '(a)') "    Scalar read matches written value"
-               num_passed = num_passed + 1
+               ! Check if values match
+               if (read_value == test_value) then
+                  write(output_unit, '(a)') "    Scalar read matches written value"
+                  num_passed = num_passed + 1
+               else
+                  write(output_unit, '(a)') "    Scalar mismatch: expected ", test_value, ", got ", read_value
+                  num_failed = num_failed + 1
+               end if
+
+               call h5file%delete()
             else
-               write(output_unit, '(a)') "    Scalar mismatch: expected ", test_value, ", got ", read_value
+               write(output_unit, '(a)') "    File initialization failed"
                num_failed = num_failed + 1
             end if
-
-            call h5file%delete()
          else
-            write(output_unit, '(a)') "    File initialization failed"
-            num_failed = num_failed + 1
+            ! Non-root processes should not participate in the test
+            write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+            num_passed = num_passed + 1  ! Count as passed since this is expected behavior
          end if
-      else
-         ! Non-root processes should not participate in the test
-         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
-         num_passed = num_passed + 1  ! Count as passed since this is expected behavior
-      end if
 
-      write(output_unit, *)
-   end subroutine test_write_read_${suffix}$_scalar_serial
+         write(output_unit, *)
+         end subroutine test_write_read_${suffix}$_scalar_serial
 
-   ! Test for ${type_label}$ scalar - no_overwrite (update value in place)
-   subroutine test_write_read_${suffix}$_scalar_no_overwrite()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ scalar (no_overwrite, serial mode)"
-      character(*), parameter :: filename = "test_${suffix}$_no_overwrite.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_scalar"
-      ${type_label}$ :: initial_value = ${init_value}$
-      ${type_label}$ :: new_value = ${alt_value}$
-      ${type_label}$ :: read_value
+         ! Test for ${type_label}$ scalar - no_overwrite (update value in place)
+         subroutine test_write_read_${suffix}$_scalar_no_overwrite()
+            type(h5file_t) :: h5file
+            character(*), parameter :: test_name = "Test: Write and read ${type_label}$ scalar (no_overwrite, serial mode)"
+            character(*), parameter :: filename = "test_${suffix}$_no_overwrite.h5"
+            character(*), parameter :: h5path = "/"
+            character(*), parameter :: dataset = "test_scalar"
+            ${type_label}$ :: initial_value = ${init_value}$
+            ${type_label}$ :: new_value = ${alt_value}$
+            ${type_label}$ :: read_value
+            integer :: n_overwritten_before
 
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+            num_tests = num_tests + 1
+            write(output_unit, '(a)') test_name
 
-      ! Initialize MPI communicator first to check rank
-      call init_with_mpi_comm_world(h5file%mpi_comm)
+            ! Initialize MPI communicator first to check rank
+            call init_with_mpi_comm_world(h5file%mpi_comm)
 
-      ! Only root process performs serial HDF5 operations
-      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
-         ! Init file in serial mode (only root process allowed)
-         call h5file%init(filename, serial_access=.true.)
+            ! Only root process performs serial HDF5 operations
+            if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+               ! Init file in serial mode (only root process allowed)
+               call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%is_open()) then
-            ! Create the dataset
-            call h5file%write(h5path, dataset, initial_value)
+               if (h5file%is_open()) then
+                  ! Create the dataset
+                  call h5file%write(h5path, dataset, initial_value)
+                  n_overwritten_before = h5file%n_overwritten_datasets
 
-            ! Update the value in place: with no_overwrite the dataset is opened and
-            ! written to, not deleted and recreated.
-            call h5file%write(h5path, dataset, new_value, no_overwrite=.true.)
+                  ! Update the value in place: with no_overwrite the dataset is opened and
+                  ! written to, not deleted and recreated.
+                  call h5file%write(h5path, dataset, new_value, no_overwrite=.true.)
 
-            ! Read scalar back
-            call h5file%read(h5path, dataset, read_value)
+                  ! Read scalar back
+                  call h5file%read(h5path, dataset, read_value)
 
-            ! The value must be updated and no dataset must have been overwritten (deleted + recreated)
-            if (read_value == new_value .and. h5file%n_overwritten_datasets == 0) then
-               write(output_unit, '(a)') "    no_overwrite updated value in place"
-               num_passed = num_passed + 1
+                  ! The value must be updated and the no_overwrite write must not have deleted +
+                  ! recreated the dataset (the overwrite counter must be unchanged).
+                  if (read_value == new_value .and. h5file%n_overwritten_datasets == n_overwritten_before) then
+                     write(output_unit, '(a)') "    no_overwrite updated value in place"
+                     num_passed = num_passed + 1
+                  else
+                     write(output_unit, '(a)') "    no_overwrite mismatch"
+                     num_failed = num_failed + 1
+                  end if
+
+                  call h5file%delete()
+               else
+                  write(output_unit, '(a)') "    File initialization failed"
+                  num_failed = num_failed + 1
+               end if
             else
-               write(output_unit, '(a)') "    no_overwrite mismatch"
-               num_failed = num_failed + 1
+               ! Non-root processes should not participate in the test
+               write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+               num_passed = num_passed + 1  ! Count as passed since this is expected behavior
             end if
 
-            call h5file%delete()
-         else
-            write(output_unit, '(a)') "    File initialization failed"
-            num_failed = num_failed + 1
-         end if
-      else
-         ! Non-root processes should not participate in the test
-         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
-         num_passed = num_passed + 1  ! Count as passed since this is expected behavior
-      end if
-
-      write(output_unit, *)
-   end subroutine test_write_read_${suffix}$_scalar_no_overwrite
+            write(output_unit, *)
+            end subroutine test_write_read_${suffix}$_scalar_no_overwrite
 
 #:endfor
-end program write_read_numerical_scalar_test
+         end program write_read_numerical_scalar_test

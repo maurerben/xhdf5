@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Unit tests for write and read numerical matrix (rank 2 array) routines
 
 #! List of numeric types to generate tests for.
@@ -191,395 +194,397 @@ contains
       end if
 
       write(output_unit, *)
-   end subroutine test_write_read_${suffix}$_matrix
+      end subroutine test_write_read_${suffix}$_matrix
 
-   ! Test for ${type_label}$ matrix - serial mode
-   subroutine test_write_read_${suffix}$_matrix_serial()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ matrix (serial mode)"
-      character(*), parameter :: filename = "test_${suffix}$_matrix_serial.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_matrix"
-      integer(int32), parameter :: n_rows = 20, n_cols = 10
-      ${type_label}$, allocatable :: full_matrix(:,:), read_matrix(:,:)
-      integer(int32) :: i, j
+      ! Test for ${type_label}$ matrix - serial mode
+      subroutine test_write_read_${suffix}$_matrix_serial()
+         type(h5file_t) :: h5file
+         character(*), parameter :: test_name = "Test: Write and read ${type_label}$ matrix (serial mode)"
+         character(*), parameter :: filename = "test_${suffix}$_matrix_serial.h5"
+         character(*), parameter :: h5path = "/"
+         character(*), parameter :: dataset = "test_matrix"
+         integer(int32), parameter :: n_rows = 20, n_cols = 10
+         ${type_label}$, allocatable :: full_matrix(:,:), read_matrix(:,:)
+         integer(int32) :: i, j
 
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+         num_tests = num_tests + 1
+         write(output_unit, '(a)') test_name
 
-      call init_with_mpi_comm_world(h5file%mpi_comm)
+         call init_with_mpi_comm_world(h5file%mpi_comm)
 
-      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
-         call h5file%init(filename, serial_access=.true.)
+         if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+            call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%is_open()) then
-            allocate(full_matrix(n_rows, n_cols))
-            allocate(read_matrix(n_rows, n_cols))
-            do j = 1, n_cols
-               do i = 1, n_rows
-                  full_matrix(i, j) = ${matval(vclass, rkind, "i - 1")}$
+            if (h5file%is_open()) then
+               allocate(full_matrix(n_rows, n_cols))
+               allocate(read_matrix(n_rows, n_cols))
+               do j = 1, n_cols
+                  do i = 1, n_rows
+                     full_matrix(i, j) = ${matval(vclass, rkind, "i - 1")}$
+                  end do
                end do
-            end do
 
-            call h5file%write(h5path, dataset, full_matrix)
-            write(output_unit, '(a)') "    Full matrix written successfully"
+               call h5file%write(h5path, dataset, full_matrix)
+               write(output_unit, '(a)') "    Full matrix written successfully"
 
-            call h5file%read(h5path, dataset, read_matrix)
+               call h5file%read(h5path, dataset, read_matrix)
 
-            if (${matcompare(vclass, "full_matrix")}$) then
-               write(output_unit, '(a)') "    Matrix read matches written values"
-               num_passed = num_passed + 1
+               if (${matcompare(vclass, "full_matrix")}$) then
+                  write(output_unit, '(a)') "    Matrix read matches written values"
+                  num_passed = num_passed + 1
+               else
+                  write(output_unit, '(a)') "    Matrix read mismatch"
+                  num_failed = num_failed + 1
+               end if
+
+               deallocate(full_matrix, read_matrix)
+               call h5file%delete()
             else
-               write(output_unit, '(a)') "    Matrix read mismatch"
+               write(output_unit, '(a)') "    File initialization failed"
                num_failed = num_failed + 1
             end if
-
-            deallocate(full_matrix, read_matrix)
-            call h5file%delete()
          else
-            write(output_unit, '(a)') "    File initialization failed"
-            num_failed = num_failed + 1
+            write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+            num_passed = num_passed + 1
          end if
-      else
-         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
-         num_passed = num_passed + 1
-      end if
 
-      write(output_unit, *)
-   end subroutine test_write_read_${suffix}$_matrix_serial
+         write(output_unit, *)
+         end subroutine test_write_read_${suffix}$_matrix_serial
 
-   ! Test for ${type_label}$ matrix - no_overwrite (update a block of rows in place)
-   subroutine test_write_read_${suffix}$_matrix_no_overwrite()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read ${type_label}$ matrix (no_overwrite, serial mode)"
-      character(*), parameter :: filename = "test_${suffix}$_matrix_no_overwrite.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_matrix"
-      integer(int32), parameter :: n_rows = 8, n_cols = 6
-      integer(int32), parameter :: row_start = 3, row_count = 4
-      ${type_label}$, allocatable :: full_matrix(:,:), region_matrix(:,:), read_matrix(:,:), expected_matrix(:,:)
-      integer(int32) :: i, j
+         ! Test for ${type_label}$ matrix - no_overwrite (update a block of rows in place)
+         subroutine test_write_read_${suffix}$_matrix_no_overwrite()
+            type(h5file_t) :: h5file
+            character(*), parameter :: test_name = "Test: Write and read ${type_label}$ matrix (no_overwrite, serial mode)"
+            character(*), parameter :: filename = "test_${suffix}$_matrix_no_overwrite.h5"
+            character(*), parameter :: h5path = "/"
+            character(*), parameter :: dataset = "test_matrix"
+            integer(int32), parameter :: n_rows = 8, n_cols = 6
+            integer(int32), parameter :: row_start = 3, row_count = 4
+            ${type_label}$, allocatable :: full_matrix(:,:), region_matrix(:,:), read_matrix(:,:), expected_matrix(:,:)
+            integer(int32) :: i, j
+            integer :: n_overwritten_before
 
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+            num_tests = num_tests + 1
+            write(output_unit, '(a)') test_name
 
-      ! Initialize MPI communicator first to check rank
-      call init_with_mpi_comm_world(h5file%mpi_comm)
+            ! Initialize MPI communicator first to check rank
+            call init_with_mpi_comm_world(h5file%mpi_comm)
 
-      ! Only root process performs serial HDF5 operations
-      if (comm_to_rank(h5file%mpi_comm) == root_rank) then
-         ! Init file in serial mode (only root process allowed)
-         call h5file%init(filename, serial_access=.true.)
+            ! Only root process performs serial HDF5 operations
+            if (comm_to_rank(h5file%mpi_comm) == root_rank) then
+               ! Init file in serial mode (only root process allowed)
+               call h5file%init(filename, serial_access=.true.)
 
-         if (h5file%is_open()) then
-            allocate(full_matrix(n_rows, n_cols))
-            allocate(read_matrix(n_rows, n_cols))
-            allocate(expected_matrix(n_rows, n_cols))
-            allocate(region_matrix(row_count, n_cols))
+               if (h5file%is_open()) then
+                  allocate(full_matrix(n_rows, n_cols))
+                  allocate(read_matrix(n_rows, n_cols))
+                  allocate(expected_matrix(n_rows, n_cols))
+                  allocate(region_matrix(row_count, n_cols))
 
-            ! Create the initial full dataset
-            do j = 1, n_cols
-               do i = 1, n_rows
-                  full_matrix(i, j) = ${matval(vclass, rkind, "i - 1")}$
-               end do
-            end do
-            call h5file%write(h5path, dataset, full_matrix)
+                  ! Create the initial full dataset
+                  do j = 1, n_cols
+                     do i = 1, n_rows
+                        full_matrix(i, j) = ${matval(vclass, rkind, "i - 1")}$
+                     end do
+                  end do
+                  call h5file%write(h5path, dataset, full_matrix)
+                  n_overwritten_before = h5file%n_overwritten_datasets
 
-            ! New, distinct values for the row block [row_start, row_start+row_count-1]
-            do j = 1, n_cols
-               do i = 1, row_count
-                  region_matrix(i, j) = ${matval(vclass, rkind, "row_start + i - 2 + n_rows")}$
-               end do
-            end do
-            call h5file%write(h5path, dataset, region_matrix, &
-               datastart=[row_start, 1_int32], datasize=[n_rows, n_cols], no_overwrite=.true.)
+                  ! New, distinct values for the row block [row_start, row_start+row_count-1]
+                  do j = 1, n_cols
+                     do i = 1, row_count
+                        region_matrix(i, j) = ${matval(vclass, rkind, "row_start + i - 2 + n_rows")}$
+                     end do
+                  end do
+                  call h5file%write(h5path, dataset, region_matrix, &
+                     datastart=[row_start, 1_int32], datasize=[n_rows, n_cols], no_overwrite=.true.)
 
-            ! Expected result: the row block is replaced, everything else is preserved
-            do j = 1, n_cols
-               do i = 1, n_rows
-                  if (i >= row_start .and. i <= row_start + row_count - 1) then
-                     expected_matrix(i, j) = ${matval(vclass, rkind, "i - 1 + n_rows")}$
+                  ! Expected result: the row block is replaced, everything else is preserved
+                  do j = 1, n_cols
+                     do i = 1, n_rows
+                        if (i >= row_start .and. i <= row_start + row_count - 1) then
+                           expected_matrix(i, j) = ${matval(vclass, rkind, "i - 1 + n_rows")}$
+                        else
+                           expected_matrix(i, j) = ${matval(vclass, rkind, "i - 1")}$
+                        end if
+                     end do
+                  end do
+
+                  call h5file%read(h5path, dataset, read_matrix)
+
+                  ! Row block updated, the rest preserved, and no dataset deleted + recreated
+                  if (${matcompare(vclass, "expected_matrix")}$ .and. h5file%n_overwritten_datasets == n_overwritten_before) then
+                     write(output_unit, '(a)') "    no_overwrite updated row block and preserved the rest"
+                     num_passed = num_passed + 1
                   else
-                     expected_matrix(i, j) = ${matval(vclass, rkind, "i - 1")}$
+                     write(output_unit, '(a)') "    no_overwrite mismatch"
+                     num_failed = num_failed + 1
                   end if
-               end do
-            end do
 
-            call h5file%read(h5path, dataset, read_matrix)
-
-            ! Row block updated, the rest preserved, and no dataset deleted + recreated
-            if (${matcompare(vclass, "expected_matrix")}$ .and. h5file%n_overwritten_datasets == 0) then
-               write(output_unit, '(a)') "    no_overwrite updated row block and preserved the rest"
-               num_passed = num_passed + 1
+                  deallocate(full_matrix, region_matrix, read_matrix, expected_matrix)
+                  call h5file%delete()
+               else
+                  write(output_unit, '(a)') "    File initialization failed"
+                  num_failed = num_failed + 1
+               end if
             else
-               write(output_unit, '(a)') "    no_overwrite mismatch"
-               num_failed = num_failed + 1
+               ! Non-root processes should not participate in the test
+               write(output_unit, '(a)') "    Non-root process - skipping serial operations"
+               num_passed = num_passed + 1  ! Count as passed since this is expected behavior
             end if
 
-            deallocate(full_matrix, region_matrix, read_matrix, expected_matrix)
-            call h5file%delete()
-         else
-            write(output_unit, '(a)') "    File initialization failed"
-            num_failed = num_failed + 1
-         end if
-      else
-         ! Non-root processes should not participate in the test
-         write(output_unit, '(a)') "    Non-root process - skipping serial operations"
-         num_passed = num_passed + 1  ! Count as passed since this is expected behavior
-      end if
-
-      write(output_unit, *)
-   end subroutine test_write_read_${suffix}$_matrix_no_overwrite
+            write(output_unit, *)
+            end subroutine test_write_read_${suffix}$_matrix_no_overwrite
 
 #:endfor
-   ! Test for row-distributed matrix
-   subroutine test_write_read_integer_int32_matrix_row_distributed()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read integer(int32) matrix (row-distributed)"
-      character(*), parameter :: filename = "test_integer_int32_matrix_row_distributed.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_matrix"
-      integer(int32), parameter :: rows_per_rank = 8, n_cols = 6
-      integer(int32) :: n_rows
-      integer(int32), allocatable :: local_matrix(:,:), read_matrix(:,:)
-      integer(int32) :: local_rows, start_row, i, j
-      type(hyperslab_type), allocatable :: hyperslabs(:)
-      integer(int32) :: datastart(2), datasize(2)
+            ! Test for row-distributed matrix
+            subroutine test_write_read_integer_int32_matrix_row_distributed()
+               type(h5file_t) :: h5file
+               character(*), parameter :: test_name = "Test: Write and read integer(int32) matrix (row-distributed)"
+               character(*), parameter :: filename = "test_integer_int32_matrix_row_distributed.h5"
+               character(*), parameter :: h5path = "/"
+               character(*), parameter :: dataset = "test_matrix"
+               integer(int32), parameter :: rows_per_rank = 8, n_cols = 6
+               integer(int32) :: n_rows
+               integer(int32), allocatable :: local_matrix(:,:), read_matrix(:,:)
+               integer(int32) :: local_rows, start_row, i, j
+               type(hyperslab_type), allocatable :: hyperslabs(:)
+               integer(int32) :: datastart(2), datasize(2)
 
 #ifdef MPI
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+               num_tests = num_tests + 1
+               write(output_unit, '(a)') test_name
 
-      ! Init file in parallel mode
-      call h5file%init(filename, serial_access=.false.)
+               ! Init file in parallel mode
+               call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%is_open()) then
-         ! Total matrix size depends on number of processes
-         n_rows = comm_size * rows_per_rank
+               if (h5file%is_open()) then
+                  ! Total matrix size depends on number of processes
+                  n_rows = comm_size * rows_per_rank
 
-         ! Simple uniform row-wise distribution
-         local_rows = rows_per_rank
-         start_row = my_rank * local_rows + 1
+                  ! Simple uniform row-wise distribution
+                  local_rows = rows_per_rank
+                  start_row = my_rank * local_rows + 1
 
-         allocate(local_matrix(local_rows, n_cols))
-         allocate(read_matrix(local_rows, n_cols))
-         allocate(hyperslabs(1))
+                  allocate(local_matrix(local_rows, n_cols))
+                  allocate(read_matrix(local_rows, n_cols))
+                  allocate(hyperslabs(1))
 
-         ! Fill matrix data
-         do j = 1, n_cols
-            do i = 1, local_rows
-               local_matrix(i, j) = (start_row + i - 2) * n_cols + j
-            end do
-         end do
+                  ! Fill matrix data
+                  do j = 1, n_cols
+                     do i = 1, local_rows
+                        local_matrix(i, j) = (start_row + i - 2) * n_cols + j
+                     end do
+                  end do
 
-         ! Set up hyperslab
-         datastart(1) = start_row
-         datastart(2) = 1
-         datasize(1) = n_rows
-         datasize(2) = n_cols
+                  ! Set up hyperslab
+                  datastart(1) = start_row
+                  datastart(2) = 1
+                  datasize(1) = n_rows
+                  datasize(2) = n_cols
 
-         call hyperslabs(1)%init(shape(local_matrix, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
+                  call hyperslabs(1)%init(shape(local_matrix, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
 
-         write(output_unit, '(a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing rows ", start_row, " to ", start_row + local_rows - 1
+                  write(output_unit, '(a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing rows ", start_row, " to ", start_row + local_rows - 1
 
-         call h5file%write(h5path, dataset, local_matrix, hyperslabs=hyperslabs)
-         call h5file%read(h5path, dataset, read_matrix, hyperslabs=hyperslabs)
+                  call h5file%write(h5path, dataset, local_matrix, hyperslabs=hyperslabs)
+                  call h5file%read(h5path, dataset, read_matrix, hyperslabs=hyperslabs)
 
-         if (all(read_matrix == local_matrix)) then
-            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
-            num_passed = num_passed + 1
-         else
-            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
-            num_failed = num_failed + 1
-         end if
+                  if (all(read_matrix == local_matrix)) then
+                     write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
+                     num_passed = num_passed + 1
+                  else
+                     write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
+                     num_failed = num_failed + 1
+                  end if
 
-         deallocate(local_matrix, read_matrix, hyperslabs)
-         call h5file%delete()
-      else
-         write(output_unit, '(a)') "    File initialization failed"
-         num_failed = num_failed + 1
-      end if
+                  deallocate(local_matrix, read_matrix, hyperslabs)
+                  call h5file%delete()
+               else
+                  write(output_unit, '(a)') "    File initialization failed"
+                  num_failed = num_failed + 1
+               end if
 #else
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
-      write(output_unit, '(a)') "    Single process mode - skipping row distribution test"
-      num_passed = num_passed + 1
+               num_tests = num_tests + 1
+               write(output_unit, '(a)') test_name
+               write(output_unit, '(a)') "    Single process mode - skipping row distribution test"
+               num_passed = num_passed + 1
 #endif
 
-      write(output_unit, *)
-   end subroutine test_write_read_integer_int32_matrix_row_distributed
+               write(output_unit, *)
+            end subroutine test_write_read_integer_int32_matrix_row_distributed
 
-   ! Test for column-distributed matrix
-   subroutine test_write_read_integer_int32_matrix_col_distributed()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read integer(int32) matrix (column-distributed)"
-      character(*), parameter :: filename = "test_integer_int32_matrix_col_distributed.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_matrix"
-      integer(int32), parameter :: n_rows = 10, cols_per_rank = 5
-      integer(int32) :: n_cols
-      integer(int32), allocatable :: local_matrix(:,:), read_matrix(:,:)
-      integer(int32) :: local_cols, start_col, i, j
-      type(hyperslab_type), allocatable :: hyperslabs(:)
-      integer(int32) :: datastart(2), datasize(2)
+            ! Test for column-distributed matrix
+            subroutine test_write_read_integer_int32_matrix_col_distributed()
+               type(h5file_t) :: h5file
+               character(*), parameter :: test_name = "Test: Write and read integer(int32) matrix (column-distributed)"
+               character(*), parameter :: filename = "test_integer_int32_matrix_col_distributed.h5"
+               character(*), parameter :: h5path = "/"
+               character(*), parameter :: dataset = "test_matrix"
+               integer(int32), parameter :: n_rows = 10, cols_per_rank = 5
+               integer(int32) :: n_cols
+               integer(int32), allocatable :: local_matrix(:,:), read_matrix(:,:)
+               integer(int32) :: local_cols, start_col, i, j
+               type(hyperslab_type), allocatable :: hyperslabs(:)
+               integer(int32) :: datastart(2), datasize(2)
 
 #ifdef MPI
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+               num_tests = num_tests + 1
+               write(output_unit, '(a)') test_name
 
-      ! Init file in parallel mode
-      call h5file%init(filename, serial_access=.false.)
+               ! Init file in parallel mode
+               call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%is_open()) then
-         ! Total matrix size depends on number of processes
-         n_cols = comm_size * cols_per_rank
+               if (h5file%is_open()) then
+                  ! Total matrix size depends on number of processes
+                  n_cols = comm_size * cols_per_rank
 
-         ! Simple uniform column-wise distribution
-         local_cols = cols_per_rank
-         start_col = my_rank * local_cols + 1
+                  ! Simple uniform column-wise distribution
+                  local_cols = cols_per_rank
+                  start_col = my_rank * local_cols + 1
 
-         allocate(local_matrix(n_rows, local_cols))
-         allocate(read_matrix(n_rows, local_cols))
-         allocate(hyperslabs(1))
+                  allocate(local_matrix(n_rows, local_cols))
+                  allocate(read_matrix(n_rows, local_cols))
+                  allocate(hyperslabs(1))
 
-         ! Fill matrix data
-         do j = 1, local_cols
-            do i = 1, n_rows
-               local_matrix(i, j) = (i - 1) * n_cols + (start_col + j - 1)
-            end do
-         end do
+                  ! Fill matrix data
+                  do j = 1, local_cols
+                     do i = 1, n_rows
+                        local_matrix(i, j) = (i - 1) * n_cols + (start_col + j - 1)
+                     end do
+                  end do
 
-         ! Set up hyperslab
-         datastart(1) = 1
-         datastart(2) = start_col
-         datasize(1) = n_rows
-         datasize(2) = n_cols
+                  ! Set up hyperslab
+                  datastart(1) = 1
+                  datastart(2) = start_col
+                  datasize(1) = n_rows
+                  datasize(2) = n_cols
 
-         call hyperslabs(1)%init(shape(local_matrix, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
+                  call hyperslabs(1)%init(shape(local_matrix, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
 
-         write(output_unit, '(a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing columns ", start_col, " to ", start_col + local_cols - 1
+                  write(output_unit, '(a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing columns ", start_col, " to ", start_col + local_cols - 1
 
-         call h5file%write(h5path, dataset, local_matrix, hyperslabs=hyperslabs)
-         call h5file%read(h5path, dataset, read_matrix, hyperslabs=hyperslabs)
+                  call h5file%write(h5path, dataset, local_matrix, hyperslabs=hyperslabs)
+                  call h5file%read(h5path, dataset, read_matrix, hyperslabs=hyperslabs)
 
-         if (all(read_matrix == local_matrix)) then
-            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
-            num_passed = num_passed + 1
-         else
-            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
-            num_failed = num_failed + 1
-         end if
+                  if (all(read_matrix == local_matrix)) then
+                     write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
+                     num_passed = num_passed + 1
+                  else
+                     write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
+                     num_failed = num_failed + 1
+                  end if
 
-         deallocate(local_matrix, read_matrix, hyperslabs)
-         call h5file%delete()
-      else
-         write(output_unit, '(a)') "    File initialization failed"
-         num_failed = num_failed + 1
-      end if
+                  deallocate(local_matrix, read_matrix, hyperslabs)
+                  call h5file%delete()
+               else
+                  write(output_unit, '(a)') "    File initialization failed"
+                  num_failed = num_failed + 1
+               end if
 #else
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
-      write(output_unit, '(a)') "    Single process mode - skipping column distribution test"
-      num_passed = num_passed + 1
+               num_tests = num_tests + 1
+               write(output_unit, '(a)') test_name
+               write(output_unit, '(a)') "    Single process mode - skipping column distribution test"
+               num_passed = num_passed + 1
 #endif
 
-      write(output_unit, *)
-   end subroutine test_write_read_integer_int32_matrix_col_distributed
+               write(output_unit, *)
+            end subroutine test_write_read_integer_int32_matrix_col_distributed
 
-   ! Test for block-distributed matrix (2D domain decomposition)
-   subroutine test_write_read_integer_int32_matrix_block_distributed()
-      type(h5file_t) :: h5file
-      character(*), parameter :: test_name = "Test: Write and read integer(int32) matrix (block-distributed 2x2 decomposition)"
-      character(*), parameter :: filename = "test_integer_int32_matrix_block_distributed.h5"
-      character(*), parameter :: h5path = "/"
-      character(*), parameter :: dataset = "test_matrix"
-      integer(int32), parameter :: block_rows_per_rank = 4, block_cols_per_rank = 4
-      integer(int32) :: n_rows, n_cols
-      integer(int32), allocatable :: local_matrix(:,:), read_matrix(:,:)
-      integer(int32) :: local_rows, local_cols, start_row, start_col, i, j
-      integer(int32) :: block_row, block_col, grid_rows, grid_cols
-      type(hyperslab_type), allocatable :: hyperslabs(:)
-      integer(int32) :: datastart(2), datasize(2)
+            ! Test for block-distributed matrix (2D domain decomposition)
+            subroutine test_write_read_integer_int32_matrix_block_distributed()
+               type(h5file_t) :: h5file
+               character(*), parameter :: test_name = "Test: Write and read integer(int32) matrix (block-distributed 2x2 decomposition)"
+               character(*), parameter :: filename = "test_integer_int32_matrix_block_distributed.h5"
+               character(*), parameter :: h5path = "/"
+               character(*), parameter :: dataset = "test_matrix"
+               integer(int32), parameter :: block_rows_per_rank = 4, block_cols_per_rank = 4
+               integer(int32) :: n_rows, n_cols
+               integer(int32), allocatable :: local_matrix(:,:), read_matrix(:,:)
+               integer(int32) :: local_rows, local_cols, start_row, start_col, i, j
+               integer(int32) :: block_row, block_col, grid_rows, grid_cols
+               type(hyperslab_type), allocatable :: hyperslabs(:)
+               integer(int32) :: datastart(2), datasize(2)
 
 #ifdef MPI
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
+               num_tests = num_tests + 1
+               write(output_unit, '(a)') test_name
 
-      ! Init file in parallel mode
-      call h5file%init(filename, serial_access=.false.)
+               ! Init file in parallel mode
+               call h5file%init(filename, serial_access=.false.)
 
-      if (h5file%is_open()) then
-         ! Calculate grid dimensions for 2D decomposition
-         ! Find factors of comm_size that are as square as possible
-         grid_rows = int(sqrt(real(comm_size)))
-         do while (grid_rows > 1 .and. mod(comm_size, grid_rows) /= 0)
-            grid_rows = grid_rows - 1
-         end do
-         grid_cols = comm_size / grid_rows
+               if (h5file%is_open()) then
+                  ! Calculate grid dimensions for 2D decomposition
+                  ! Find factors of comm_size that are as square as possible
+                  grid_rows = int(sqrt(real(comm_size)))
+                  do while (grid_rows > 1 .and. mod(comm_size, grid_rows) /= 0)
+                     grid_rows = grid_rows - 1
+                  end do
+                  grid_cols = comm_size / grid_rows
 
-         ! Total matrix size depends on number of processes and block size
-         n_rows = grid_rows * block_rows_per_rank
-         n_cols = grid_cols * block_cols_per_rank
+                  ! Total matrix size depends on number of processes and block size
+                  n_rows = grid_rows * block_rows_per_rank
+                  n_cols = grid_cols * block_cols_per_rank
 
-         ! Calculate rank position in the grid
-         block_row = my_rank / grid_cols
-         block_col = mod(my_rank, grid_cols)
+                  ! Calculate rank position in the grid
+                  block_row = my_rank / grid_cols
+                  block_col = mod(my_rank, grid_cols)
 
-         ! Local block dimensions
-         local_rows = block_rows_per_rank
-         local_cols = block_cols_per_rank
+                  ! Local block dimensions
+                  local_rows = block_rows_per_rank
+                  local_cols = block_cols_per_rank
 
-         ! Starting position for this rank's block
-         start_row = block_row * local_rows + 1
-         start_col = block_col * local_cols + 1
+                  ! Starting position for this rank's block
+                  start_row = block_row * local_rows + 1
+                  start_col = block_col * local_cols + 1
 
-         allocate(local_matrix(local_rows, local_cols))
-         allocate(read_matrix(local_rows, local_cols))
-         allocate(hyperslabs(1))
+                  allocate(local_matrix(local_rows, local_cols))
+                  allocate(read_matrix(local_rows, local_cols))
+                  allocate(hyperslabs(1))
 
-         ! Fill matrix data
-         do j = 1, local_cols
-            do i = 1, local_rows
-               local_matrix(i, j) = (start_row + i - 2) * n_cols + (start_col + j - 1)
-            end do
-         end do
+                  ! Fill matrix data
+                  do j = 1, local_cols
+                     do i = 1, local_rows
+                        local_matrix(i, j) = (start_row + i - 2) * n_cols + (start_col + j - 1)
+                     end do
+                  end do
 
-         ! Set up hyperslab
-         datastart(1) = start_row
-         datastart(2) = start_col
-         datasize(1) = n_rows
-         datasize(2) = n_cols
+                  ! Set up hyperslab
+                  datastart(1) = start_row
+                  datastart(2) = start_col
+                  datasize(1) = n_rows
+                  datasize(2) = n_cols
 
-         call hyperslabs(1)%init(shape(local_matrix, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
+                  call hyperslabs(1)%init(shape(local_matrix, kind=int32), datasize, [-1], datastart, [-1], [-1], [-1], .false.)
 
-         write(output_unit, '(a,i0,a,i0,a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing rows ", start_row, &
-            " to ", start_row + local_rows - 1, " cols ", start_col, " to ", start_col + local_cols - 1
+                  write(output_unit, '(a,i0,a,i0,a,i0,a,i0,a,i0)') "    Rank ", my_rank, " writing rows ", start_row, &
+                     " to ", start_row + local_rows - 1, " cols ", start_col, " to ", start_col + local_cols - 1
 
-         call h5file%write(h5path, dataset, local_matrix, hyperslabs=hyperslabs)
-         call h5file%read(h5path, dataset, read_matrix, hyperslabs=hyperslabs)
+                  call h5file%write(h5path, dataset, local_matrix, hyperslabs=hyperslabs)
+                  call h5file%read(h5path, dataset, read_matrix, hyperslabs=hyperslabs)
 
-         if (all(read_matrix == local_matrix)) then
-            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
-            num_passed = num_passed + 1
-         else
-            write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
-            num_failed = num_failed + 1
-         end if
+                  if (all(read_matrix == local_matrix)) then
+                     write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read matches written values"
+                     num_passed = num_passed + 1
+                  else
+                     write(output_unit, '(a,i0,a)') "    Rank ", my_rank, " read mismatch"
+                     num_failed = num_failed + 1
+                  end if
 
-         deallocate(local_matrix, read_matrix, hyperslabs)
-         call h5file%delete()
-      else
-         write(output_unit, '(a)') "    File initialization failed"
-         num_failed = num_failed + 1
-      end if
+                  deallocate(local_matrix, read_matrix, hyperslabs)
+                  call h5file%delete()
+               else
+                  write(output_unit, '(a)') "    File initialization failed"
+                  num_failed = num_failed + 1
+               end if
 #else
-      num_tests = num_tests + 1
-      write(output_unit, '(a)') test_name
-      write(output_unit, '(a)') "    Single process mode - skipping block distribution test"
-      num_passed = num_passed + 1
+               num_tests = num_tests + 1
+               write(output_unit, '(a)') test_name
+               write(output_unit, '(a)') "    Single process mode - skipping block distribution test"
+               num_passed = num_passed + 1
 #endif
 
-      write(output_unit, *)
-   end subroutine test_write_read_integer_int32_matrix_block_distributed
+               write(output_unit, *)
+            end subroutine test_write_read_integer_int32_matrix_block_distributed
 
-end program write_read_numerical_matrix_test
+         end program write_read_numerical_matrix_test

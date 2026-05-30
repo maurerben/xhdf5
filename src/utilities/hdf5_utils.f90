@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Utilities for hdf5 wrapper
 module hdf5_utils
    use iso_fortran_env, only: real32, real64, error_unit

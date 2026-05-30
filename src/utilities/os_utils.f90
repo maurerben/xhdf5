@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 module os_utils
 
    implicit none
@@ -102,7 +105,7 @@ contains
       !> Full path to split
       character(*), intent(in) :: full_path
       !> Components of the full path
-      character(:), allocatable :: components(:)        
+      character(:), allocatable :: components(:)
 
       integer :: num_components, i, start_index, end_index
       character(1), parameter :: delimiter = '/'
@@ -119,15 +122,15 @@ contains
          if (path_cleaned(len(path_cleaned):len(path_cleaned)) == delimiter) then
             path_cleaned = path_cleaned(:len(path_cleaned) - 1)
          end if
-      end if    
+      end if
 
       ! Count number of components
       num_components = 1
       do i = 1, len(path_cleaned)
          if (path_cleaned(i:i) == delimiter) num_components = num_components + 1
-      end do  
+      end do
 
-      allocate(character(len=1) :: components(num_components))  
+      allocate(character(len=1) :: components(num_components))
       start_index = 1
       do i = 1, num_components
          end_index = scan(path_cleaned(start_index:), delimiter)

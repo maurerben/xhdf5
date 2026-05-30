@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Module for HDF5 wrappers.
 !> Easy to use fortran wrappers for the HDF5 library.
 !> Parallel MPI writing of array strides is supported.
@@ -95,7 +98,7 @@ module xhdf5
          write_${item[0]}$ #{if idx < len(numeric_types) - 1}#, & #{endif}#
 #:endfor
 
-         generic :: &
+      generic :: &
          read => &
          read_string, &
          read_bool, &
@@ -103,7 +106,7 @@ module xhdf5
          read_${item[0]}$ #{if idx < len(numeric_types) - 1}#, & #{endif}#
 #:endfor
 
-         procedure :: &
+      procedure :: &
          initialize_mpi_comm_type, &
          initialize_mpi_comm_int, &
 #ifdef MPI
@@ -474,9 +477,9 @@ contains
       !> If `.true.`, return. If `.false.` delete data set.
       logical, intent(in), optional :: no_overwrite
 
-      if (present(no_overwrite)) then 
-         if (no_overwrite) return 
-      end if 
+      if (present(no_overwrite)) then
+         if (no_overwrite) return
+      end if
 
       if (this%link_exists(join_paths(h5path, datasetname))) then
          this%n_overwritten_datasets = this%n_overwritten_datasets + 1

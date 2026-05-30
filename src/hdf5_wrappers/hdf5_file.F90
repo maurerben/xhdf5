@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Wrappers for initializing/finalizing HDF5 dependent globals and creating/opening/closing HDF5 files.
 module hdf5_file
 

@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Minimal test program - just open and close an HDF5 file
 program minimal_hdf5_test
 #ifdef MPI

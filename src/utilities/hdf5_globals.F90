@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Global definitions for the xhdf5 module
 module hdf5_globals
    use iso_fortran_env, only: int32

@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Unit tests for xhdf5 init and delete routines
 program init_delete_file
 #ifdef MPI

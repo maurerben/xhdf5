@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 module hdf5_group
 
 #ifdef _HDF5_
@@ -117,7 +120,7 @@ contains
       ! Get object info
       call h5oget_info_f(obj_id, info, h5err)
       call handle_hdf5_error(mpi_comm, 'h5oget_info_f', h5err)
-  
+
       call h5oclose_f(obj_id, h5err)
       call handle_hdf5_error(mpi_comm, 'h5oclose_f', h5err)
 

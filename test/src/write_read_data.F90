@@ -1,3 +1,6 @@
+! SPDX-License-Identifier: BSD-3-Clause
+! Copyright (c) 2026 Benedikt Maurer
+
 !> Unit tests for write and read string routines
 program write_read_string_test
 #ifdef MPI
