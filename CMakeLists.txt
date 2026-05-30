@@ -142,6 +142,24 @@ else()
   message(STATUS "FORD not found - documentation generation disabled (install with: pip install ford)")
 endif()
 
+
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(test)
+
+
+# Default install prefix to a writable location inside the build tree.
+# Only applies when the user did NOT pass -DCMAKE_INSTALL_PREFIX=...
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install"
+      CACHE PATH "Install prefix" FORCE)
+endif()
+message(STATUS "xhdf5 install prefix: ${CMAKE_INSTALL_PREFIX}")
+
+
+install(TARGETS xhdf5
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib)
+install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.mod")
