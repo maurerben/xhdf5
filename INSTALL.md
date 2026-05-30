@@ -8,6 +8,7 @@
 - Fortran compiler (e.g. `gfortran`, `ifort`, `pgfortran`)
 - HDF5 with Fortran support
 - MPI libraries and compiler wrappers if using MPI support
+- [fypp](https://github.com/aradi/fypp) preprocessor, used to generate Fortran sources from `.fypp` templates (install with `pip install fypp`)
 - Linux utility `nproc` is used by the test CMake configuration to set default MPI ranks
 
 ### Documentation (optional)
@@ -69,6 +70,17 @@ ctest -j 2
 - `-DENABLE_HDF5=OFF` to build without HDF5 support
 - `-DENABLE_MPI=OFF` to build without MPI support
 - `-DNUM_PROCESSES=<n>` to override the default MPI rank count used for tests
+- `-DFYPP_EXECUTABLE=<path>` to use a specific fypp instead of the auto-detected one
+
+## Specifying fypp
+
+The build generates Fortran sources from `.fypp` templates and needs a fypp preprocessor. By default CMake locates one automatically, in order: a `fypp` executable on `PATH`, then the `fypp` Python module (`python3 -m fypp`). If neither is found, configuration fails with an error.
+
+To use a particular fypp instead of relying on auto-detection, point `FYPP_EXECUTABLE` at it. This is also how you use a fypp script vendored in your source tree (it is executed directly, so it must be executable and carry a `#!/usr/bin/env python3` shebang, as the upstream `bin/fypp` does):
+
+```bash
+cmake .. -DFYPP_EXECUTABLE=/path/to/fypp
+```
 
 ## Generating API Documentation
 
