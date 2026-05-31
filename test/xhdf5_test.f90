@@ -6,7 +6,7 @@ module xhdf5_test
    use modmpi, only: mpiinfo, barrier, nofset, firstofset, lastofset
    use unit_test_framework, only : unit_test_type
    use xhdf5
-   use os_utils, only: system_cmd
+   use path_utils, only: system_cmd
    use math_utils, only: mod1, all_close
 
    implicit none

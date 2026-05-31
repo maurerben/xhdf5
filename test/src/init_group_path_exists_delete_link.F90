@@ -7,7 +7,7 @@ program init_group_path_exists_delete_link
 #endif
    use iso_fortran_env, only: output_unit
    use xhdf5
-   use os_utils, only: join_paths
+   use path_utils, only: join_paths
 
    implicit none
 

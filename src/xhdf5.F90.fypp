@@ -25,7 +25,7 @@ module xhdf5
    use iso_c_binding, only: c_ptr, c_loc
    use iso_fortran_env, only: real32, real64, int32, error_unit
 
-   use os_utils
+   use path_utils
    use hdf5_globals
    use error_handling
    use mpi_utils

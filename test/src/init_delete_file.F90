@@ -8,7 +8,7 @@ program init_delete_file
 #endif
    use iso_fortran_env, only: output_unit
    use xhdf5
-   use os_utils, only: join_paths
+   use path_utils, only: join_paths
 
    implicit none
 

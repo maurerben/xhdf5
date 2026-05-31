@@ -11,7 +11,7 @@ module hdf5_file
    use error_handling, only: handle_hdf5_error, assert_true
    use hdf5_globals, only: hdf5_id
    use mpi_utils, only: mpi_comm_type, comm_to_fint, mpi_info_null_fint
-   use os_utils, only: path_exists, separate_path_and_filename
+   use path_utils, only: path_exists, separate_path_and_filename
 
 
    implicit none
