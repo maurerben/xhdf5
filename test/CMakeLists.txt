@@ -21,6 +21,7 @@ target_link_libraries(minimal_hdf5_test PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(minimal_hdf5_test PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add test
@@ -38,6 +39,7 @@ target_link_libraries(init_delete_file PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(init_delete_file PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add tests for initialize/delete group and checking links routins 
@@ -55,6 +57,7 @@ target_link_libraries(init_group_path_exists_delete_link PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(init_group_path_exists_delete_link PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add test
@@ -72,6 +75,7 @@ target_link_libraries(write_read_data PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(write_read_data PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add test
@@ -93,6 +97,7 @@ target_link_libraries(write_read_numerical_scalar PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(write_read_numerical_scalar PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add test
@@ -114,6 +119,7 @@ target_link_libraries(write_read_numerical_vector PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(write_read_numerical_vector PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add test
@@ -135,6 +141,7 @@ target_link_libraries(write_read_numerical_matrix PRIVATE xhdf5)
 # Set include directories for tests
 target_include_directories(write_read_numerical_matrix PRIVATE
   ${CMAKE_BINARY_DIR}/modules
+  ${CMAKE_BINARY_DIR}/modules_internal
 )
 
 # Add test
