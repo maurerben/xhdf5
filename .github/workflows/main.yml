@@ -72,3 +72,5 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+        env:
+          OMPI_MCA_rmaps_base_oversubscribe: "1"
