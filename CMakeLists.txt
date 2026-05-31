@@ -5,6 +5,13 @@ project(xhdf5 Fortran)
 set(CMAKE_Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp")
 
+# Allow arbitrarily long source lines (fypp-generated code can exceed the default limit)
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-ffree-line-length-none)
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+  add_compile_options(-extend-source)
+endif()
+
 # Options
 option(ENABLE_HDF5 "Enable HDF5 support" ON)
 option(ENABLE_MPI "Enable MPI support" OFF)
