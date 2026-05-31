@@ -22,7 +22,6 @@ program minimal_hdf5_test
 
    write(output_unit, '(a)') "Starting minimal HDF5 test..."
 
-#ifdef _HDF5_
 #ifdef MPI
    ! Open/Create file with MPI_COMM_WORLD
    write(output_unit, '(a)') "Opening HDF5 file with MPI_COMM_WORLD..."
@@ -45,13 +44,10 @@ program minimal_hdf5_test
       write(output_unit, '(a)') "  Failed to close file"
    end if
 
+   write(output_unit, '(a)') "  Test completed successfully"
+
 #ifdef MPI
    call mpi_finalize(mpi_err)
-#endif
-
-   write(output_unit, '(a)') "  Test completed successfully"
-#else
-   write(output_unit, '(a)') "HDF5 not available - test skipped"
 #endif
 
 end program minimal_hdf5_test

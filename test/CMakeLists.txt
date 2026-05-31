@@ -14,139 +14,50 @@ if(NOT DEFINED NUM_PROCESSES)
   endif()
 endif()
 
-# Minimal test executable
-add_executable(minimal_hdf5_test src/minimal_test.F90)
-target_link_libraries(minimal_hdf5_test PRIVATE xhdf5)
+# Register a unit-test executable and its ctest entry.
+#
+# Usage:
+#   add_xhdf5_test(<name> <source>)         # plain Fortran source
+#   add_xhdf5_test(<name> <source.fypp> FYPP)  # generate the source from a fypp template first
+function(add_xhdf5_test name source)
+  cmake_parse_arguments(ARG "FYPP" "" "" ${ARGN})
 
-# Set include directories for tests
-target_include_directories(minimal_hdf5_test PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
+  if(ARG_FYPP)
+    set(generated "${CMAKE_CURRENT_BINARY_DIR}/${name}.F90")
+    fypp_generate("${CMAKE_CURRENT_SOURCE_DIR}/${source}" "${generated}")
+    set(source "${generated}")
+  else()
+    set(source "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
+  endif()
 
-# Add test
-if(ENABLE_MPI)
-  add_test(NAME minimal_hdf5_test COMMAND ${MPIEXEC} -np ${NUM_PROCESSES} $<TARGET_FILE:minimal_hdf5_test>)
+  add_executable(${name} "${source}")
+  target_link_libraries(${name} PRIVATE xhdf5)
+  target_include_directories(${name} PRIVATE
+    ${CMAKE_BINARY_DIR}/modules
+    ${CMAKE_BINARY_DIR}/modules_internal
+  )
+
+  if(ENABLE_MPI)
+    add_test(NAME ${name}
+      COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUM_PROCESSES} $<TARGET_FILE:${name}>)
+  else()
+    add_test(NAME ${name} COMMAND ${name})
+  endif()
+endfunction()
+
+# Select which tests are built based on HDF5 availability. The test sources no
+# longer guard themselves with #ifdef _HDF5_; instead the HDF5-requiring tests
+# are only built when HDF5 is enabled, and the no-HDF5 behaviour test only when
+# it is not.
+if(ENABLE_HDF5)
+  add_xhdf5_test(minimal_hdf5_test                  src/minimal_test.F90)
+  add_xhdf5_test(init_delete_file                   src/init_delete_file.F90)
+  add_xhdf5_test(init_group_path_exists_delete_link src/init_group_path_exists_delete_link.F90)
+  add_xhdf5_test(write_read_data                    src/write_read_data.F90)
+  add_xhdf5_test(write_read_numerical_scalar        src/write_read_numerical_scalar.F90.fypp FYPP)
+  add_xhdf5_test(write_read_numerical_vector        src/write_read_numerical_vector.F90.fypp FYPP)
+  add_xhdf5_test(write_read_numerical_matrix        src/write_read_numerical_matrix.F90.fypp FYPP)
 else()
-  add_test(NAME minimal_hdf5_test COMMAND minimal_hdf5_test)
-endif()
-
-
-# Unit tests for init/delete file routines
-add_executable(init_delete_file src/init_delete_file.F90)
-target_link_libraries(init_delete_file PRIVATE xhdf5)
-
-# Set include directories for tests
-target_include_directories(init_delete_file PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
-
-# Add tests for initialize/delete group and checking links routins 
-if(ENABLE_MPI)
-  add_test(NAME init_delete_file COMMAND ${MPIEXEC_EXECUTABLE} -np ${NUM_PROCESSES} $<TARGET_FILE:init_delete_file>)
-else()
-  add_test(NAME init_delete_file COMMAND init_delete_file)
-endif()
-
-
-# Unit tests for initialize/finalize routines
-add_executable(init_group_path_exists_delete_link src/init_group_path_exists_delete_link.F90)
-target_link_libraries(init_group_path_exists_delete_link PRIVATE xhdf5)
-
-# Set include directories for tests
-target_include_directories(init_group_path_exists_delete_link PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
-
-# Add test
-if(ENABLE_MPI)
-  add_test(NAME init_group_path_exists_delete_link COMMAND ${MPIEXEC_EXECUTABLE} -np ${NUM_PROCESSES} $<TARGET_FILE:init_group_path_exists_delete_link>)
-else()
-  add_test(NAME init_group_path_exists_delete_link COMMAND init_group_path_exists_delete_link)
-endif()
-
-
-# Unit tests for write/read data routines (strings and booleans)
-add_executable(write_read_data src/write_read_data.F90)
-target_link_libraries(write_read_data PRIVATE xhdf5)
-
-# Set include directories for tests
-target_include_directories(write_read_data PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
-
-# Add test
-if(ENABLE_MPI)
-  add_test(NAME write_read_data COMMAND ${MPIEXEC_EXECUTABLE} -np ${NUM_PROCESSES} $<TARGET_FILE:write_read_data>)
-else()
-  add_test(NAME write_read_data COMMAND write_read_data)
-endif()
-
-
-# Unit tests for write/read numerical scalar routines (generated from fypp template)
-fypp_generate(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/write_read_numerical_scalar.F90.fypp
-  ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_scalar.F90
-)
-add_executable(write_read_numerical_scalar ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_scalar.F90)
-target_link_libraries(write_read_numerical_scalar PRIVATE xhdf5)
-
-# Set include directories for tests
-target_include_directories(write_read_numerical_scalar PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
-
-# Add test
-if(ENABLE_MPI)
-  add_test(NAME write_read_numerical_scalar COMMAND ${MPIEXEC_EXECUTABLE} -np ${NUM_PROCESSES} $<TARGET_FILE:write_read_numerical_scalar>)
-else()
-  add_test(NAME write_read_numerical_scalar COMMAND write_read_numerical_scalar)
-endif()
-
-
-# Unit tests for write/read numerical vector routines (generated from fypp template)
-fypp_generate(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/write_read_numerical_vector.F90.fypp
-  ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_vector.F90
-)
-add_executable(write_read_numerical_vector ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_vector.F90)
-target_link_libraries(write_read_numerical_vector PRIVATE xhdf5)
-
-# Set include directories for tests
-target_include_directories(write_read_numerical_vector PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
-
-# Add test
-if(ENABLE_MPI)
-  add_test(NAME write_read_numerical_vector COMMAND ${MPIEXEC_EXECUTABLE} -np ${NUM_PROCESSES} $<TARGET_FILE:write_read_numerical_vector>)
-else()
-  add_test(NAME write_read_numerical_vector COMMAND write_read_numerical_vector)
-endif()
-
-
-# Unit tests for write/read numerical matrix routines (generated from fypp template)
-fypp_generate(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/write_read_numerical_matrix.F90.fypp
-  ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_matrix.F90
-)
-add_executable(write_read_numerical_matrix ${CMAKE_CURRENT_BINARY_DIR}/write_read_numerical_matrix.F90)
-target_link_libraries(write_read_numerical_matrix PRIVATE xhdf5)
-
-# Set include directories for tests
-target_include_directories(write_read_numerical_matrix PRIVATE
-  ${CMAKE_BINARY_DIR}/modules
-  ${CMAKE_BINARY_DIR}/modules_internal
-)
-
-# Add test
-if(ENABLE_MPI)
-  add_test(NAME write_read_numerical_matrix COMMAND ${MPIEXEC_EXECUTABLE} -np ${NUM_PROCESSES} $<TARGET_FILE:write_read_numerical_matrix>)
-else()
-  add_test(NAME write_read_numerical_matrix COMMAND write_read_numerical_matrix)
+  # Without HDF5 the library routines must remain callable but do nothing / return false.
+  add_xhdf5_test(no_hdf5_behavior src/no_hdf5_behavior.F90)
 endif()

@@ -31,7 +31,6 @@ program init_delete_file
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
-#ifdef _HDF5_
 #ifdef MPI
    if (comm_size == 1) then
 #endif
@@ -57,9 +56,6 @@ program init_delete_file
    call test_init_nonserial_opens_existing()
 #endif
 
-#else
-   write(output_unit, '(a)') "HDF5 not available - tests skipped"
-#endif
 
    ! Summary
    write(output_unit, *)

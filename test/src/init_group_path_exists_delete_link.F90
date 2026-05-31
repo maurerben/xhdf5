@@ -35,8 +35,6 @@ program init_group_path_exists_delete_link
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
-#ifdef _HDF5_
-
    ! Test 1: init_group
    call test_init_group()
 
@@ -48,9 +46,6 @@ program init_group_path_exists_delete_link
 
    ! Test 4: delete_link
    call test_delete_link()
-#else
-   write(output_unit, '(a)') "HDF5 not available - tests skipped"
-#endif
 
    ! Summary
    write(output_unit, *)

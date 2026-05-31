@@ -40,7 +40,6 @@ program write_read_numerical_scalar_test
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
-#ifdef _HDF5_
 #:for suffix, type_label, init_value, alt_value in scalar_types
    ! Test ${type_label}$ scalars
    call test_write_read_${suffix}$_scalar()
@@ -48,9 +47,6 @@ program write_read_numerical_scalar_test
    call test_write_read_${suffix}$_scalar_no_overwrite()
 
 #:endfor
-#else
-   write(output_unit, '(a)') "HDF5 not available - tests skipped"
-#endif
 
    ! Summary
    write(output_unit, *)

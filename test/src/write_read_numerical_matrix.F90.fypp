@@ -52,7 +52,6 @@ program write_read_numerical_matrix_test
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
-#ifdef _HDF5_
 #:for suffix, type_label, vclass, rkind in matrix_types
    ! Test ${type_label}$ matrices
    call test_write_read_${suffix}$_matrix()
@@ -69,10 +68,6 @@ program write_read_numerical_matrix_test
 
    !  ! Test block-distributed matrices
    call test_write_read_integer_int32_matrix_block_distributed()
-#endif
-
-#else
-   write(output_unit, '(a)') "HDF5 not available - tests skipped"
 #endif
 
    ! Summary

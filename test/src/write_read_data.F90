@@ -29,7 +29,6 @@ program write_read_string_test
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
-#ifdef _HDF5_
    ! Test 1: Write and read string
    call test_write_read_string()
 
@@ -53,9 +52,6 @@ program write_read_string_test
 
    ! Test 8: Overwrite boolean dataset
    call test_overwrite_bool_dataset()
-#else
-   write(output_unit, '(a)') "HDF5 not available - tests skipped"
-#endif
 
    ! Summary
    write(output_unit, *)

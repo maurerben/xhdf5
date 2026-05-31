@@ -52,7 +52,6 @@ program write_read_numerical_vector_test
    write(output_unit, '(a)') "=========================================="
    write(output_unit, *)
 
-#ifdef _HDF5_
 #:for suffix, type_label, vclass, rkind in vector_types
    ! Test ${type_label}$ vectors
    call test_write_read_${suffix}$_vector()
@@ -66,10 +65,6 @@ program write_read_numerical_vector_test
 
    ! Test non-contiguous data distribution
    call test_write_read_integer_int32_vector_noncontiguous()
-#endif
-
-#else
-   write(output_unit, '(a)') "HDF5 not available - tests skipped"
 #endif
 
    ! Summary
