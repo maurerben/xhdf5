@@ -12,6 +12,9 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   add_compile_options(-extend-source)
 endif()
 
+# Build with position-independent code so the (static) library can be linked into shared objects
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Options
 option(ENABLE_HDF5 "Enable HDF5 support" ON)
 option(ENABLE_MPI "Enable MPI support" OFF)
